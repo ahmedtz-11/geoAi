@@ -1,0 +1,5 @@
+# run once to make test data
+import numpy as np, pandas as pd
+x, y = np.random.rand(2, 2000) * 1000
+v = 50*np.exp(-((x-300)**2+(y-600)**2)/20000) + 30*np.exp(-((x-750)**2+(y-250)**2)/15000) + np.random.randn(2000)
+pd.DataFrame({"x": x, "y": y, "mag": v}).to_csv("test.csv", index=False)

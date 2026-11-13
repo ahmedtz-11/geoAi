@@ -1,0 +1,13 @@
+project,pit,type,easting,northing,epsg,latitude,longitude,depth_m,grade,status,potential,priority,note,saved
+My site,Pit 1,existing,257226.01,9005749.52,32737,-8.9879444,36.7918333,,,,High,,on the trend,2026-11-12
+My site,Pit 2,existing,257224.16,9006056.84,32737,-8.9851667,36.7918333,,,,High,,on the trend,2026-11-12
+My site,Pit 3,existing,256898.75,9006054.88,32737,-8.9851667,36.788875,,,,High,,on the trend,2026-11-12
+My site,Pit 4,existing,256900.61,9005747.55,32737,-8.9879444,36.788875,,,,High,,on the trend,2026-11-12
+My site,P1,proposed,257225.99,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12
+My site,P2,proposed,257225.99,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12
+My site,P3,proposed,257225.99,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12
+My site,P4,proposed,257225.98,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12
+My site,P5,proposed,257225.98,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12
+My site,P6,proposed,257225.98,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12
+My site,P7,proposed,257225.98,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12
+My site,P8,proposed,257225.98,9005749.52,32737,-8.9879444,36.7918331,,,Infill,,1 (first),untested 325 m gap between two mineralised pits,2026-11-12

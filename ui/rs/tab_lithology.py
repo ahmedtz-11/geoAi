@@ -6,6 +6,7 @@ import streamlit as st
 from geoai import export, lithology
 
 from .common import get_scene, header, lith, need_scene, show_fig
+from ui.state import fragment
 
 WAVELENGTH = {"B02": 490, "B03": 560, "B04": 665, "B08": 842, "B11": 1610, "B12": 2190}
 
@@ -24,7 +25,7 @@ def spectra_figure(means, colors):
     return fig
 
 
-@st.fragment
+@fragment
 def render(aoi):
     st.caption("Unsupervised K-means classification of Sentinel-2 reflectance and mineral indices. Pixels with a "
                "similar spectrum are grouped into units that usually follow rock type and its weathering cover. "

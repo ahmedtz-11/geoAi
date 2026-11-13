@@ -5,9 +5,10 @@ import streamlit as st
 from geoai import export, indices
 
 from .common import get_scene, header, need_scene, show_fig, ss
+from ui.state import fragment
 
 
-@st.fragment
+@fragment
 def render(aoi):
     st.caption("Band ratios divide one band by another. This cancels most of the brightness changes caused by "
                "topography and shadow, and leaves the colour differences produced by minerals.")

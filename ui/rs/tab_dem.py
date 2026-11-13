@@ -6,9 +6,10 @@ from geoai import export, terrain
 from geoai.imagery import dem as dem_mod
 
 from .common import get_scene, header, need_scene, show_fig
+from ui.state import fragment
 
 
-@st.fragment
+@fragment
 def render(aoi):
     st.caption("Copernicus DEM GLO-30 elevation. Relief shows ridges of resistant rock (quartz veins, BIF, "
                "granites), valleys eroded along faults and soft units, and the drainage pattern.")

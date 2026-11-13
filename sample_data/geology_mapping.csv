@@ -1,0 +1,161 @@
+Station,Easting,Northing,Lithology,Strike,Dip
+GS001,409116.0,9682119.0,Granite,58.0,74.0
+GS002,406082.0,9681516.9,Mafic metavolcanic (greenstone),51.0,64.0
+GS003,405630.9,9681407.7,Mafic metavolcanic (greenstone),,
+GS004,407376.9,9680715.3,Granite,,
+GS005,406265.4,9682846.1,Laterite cover,,
+GS006,408844.9,9684017.6,Mafic metavolcanic (greenstone),51.0,73.0
+GS007,409185.2,9682425.5,Granite,46.0,74.0
+GS008,405700.4,9681505.5,Mafic metavolcanic (greenstone),,
+GS009,406274.1,9681855.2,Mafic metavolcanic (greenstone),,
+GS010,406410.7,9681933.7,Mafic metavolcanic (greenstone),33.0,86.0
+GS011,406319.2,9684339.7,Laterite cover,,
+GS012,406168.1,9681121.3,Sheared schist,57.0,72.0
+GS013,407638.9,9684686.8,Laterite cover,,
+GS014,406407.3,9683222.5,Laterite cover,,
+GS015,406413.7,9681016.6,BIF,45.0,74.0
+GS016,409905.0,9681405.7,Granite,56.0,85.0
+GS017,405643.8,9682400.7,Granite,41.0,69.0
+GS018,407416.2,9682449.3,Sheared schist,,
+GS019,407960.4,9684576.5,Granite,58.0,71.0
+GS020,409245.7,9681425.4,Granite,,
+GS021,408153.9,9683291.7,Mafic metavolcanic (greenstone),51.0,65.0
+GS022,408482.2,9681542.2,Granite,54.0,69.0
+GS023,408010.5,9681390.6,Granite,,
+GS024,407610.9,9683026.3,Mafic metavolcanic (greenstone),,
+GS025,408472.6,9683895.3,Mafic metavolcanic (greenstone),55.0,75.0
+GS026,406638.3,9681104.3,BIF,35.0,54.0
+GS027,406291.9,9681913.6,Mafic metavolcanic (greenstone),,
+GS028,409838.6,9681606.9,Granite,,
+GS029,406211.2,9683950.8,Laterite cover,,
+GS030,407389.1,9681688.3,Mafic metavolcanic (greenstone),,
+GS031,405670.6,9682645.6,Granite,42.0,64.0
+GS032,406327.2,9681592.0,Mafic metavolcanic (greenstone),54.0,69.0
+GS033,408384.9,9682507.1,Mafic metavolcanic (greenstone),41.0,72.0
+GS034,408340.2,9684528.9,Mafic metavolcanic (greenstone),52.0,74.0
+GS035,407931.1,9684898.3,Laterite cover,,
+GS036,408082.9,9681968.6,Granite,26.0,58.0
+GS037,409881.6,9683473.3,Granite,,
+GS038,409855.7,9683098.4,Granite,,
+GS039,408976.3,9682904.8,Granite,,
+GS040,406454.8,9680648.5,Mafic metavolcanic (greenstone),34.0,67.0
+GS041,407861.8,9683495.0,Mafic metavolcanic (greenstone),,
+GS042,409532.6,9684851.8,Mafic metavolcanic (greenstone),,
+GS043,408328.8,9681505.4,Granite,,
+GS044,406369.4,9681266.3,Mafic metavolcanic (greenstone),49.0,76.0
+GS045,405658.5,9684023.3,Laterite cover,,
+GS046,406904.5,9682017.2,Mafic metavolcanic (greenstone),46.0,76.0
+GS047,406464.7,9680698.2,Mafic metavolcanic (greenstone),,
+GS048,409928.4,9683502.0,Granite,42.0,70.0
+GS049,405892.4,9682843.9,Laterite cover,,
+GS050,407584.8,9682607.7,Sheared schist,44.0,61.0
+GS051,405781.8,9681109.5,Mafic metavolcanic (greenstone),34.0,77.0
+GS052,406291.3,9684330.6,Granite,,
+GS053,408304.7,9683783.4,Mafic metavolcanic (greenstone),,
+GS054,409513.0,9683822.3,Mafic metavolcanic (greenstone),,
+GS055,409138.0,9683048.0,Granite,38.0,64.0
+GS056,406003.4,9681344.9,Mafic metavolcanic (greenstone),51.0,57.0
+GS057,407267.3,9681659.9,BIF,40.0,65.0
+GS058,408391.7,9680720.3,Granite,48.0,63.0
+GS059,409717.6,9684592.9,Mafic metavolcanic (greenstone),39.0,68.0
+GS060,409403.2,9681742.2,Granite,52.0,66.0
+GS061,408499.7,9682498.4,Granite,40.0,81.0
+GS062,409976.5,9684090.8,Mafic metavolcanic (greenstone),,
+GS063,409002.7,9681066.1,Granite,48.0,68.0
+GS064,407321.4,9683283.6,Mafic metavolcanic (greenstone),32.0,64.0
+GS065,405930.3,9682750.5,Laterite cover,,
+GS066,408269.6,9681111.3,Granite,48.0,81.0
+GS067,408843.1,9681801.5,Granite,40.0,70.0
+GS068,407347.5,9681672.5,Mafic metavolcanic (greenstone),45.0,74.0
+GS069,409958.0,9682916.9,Granite,30.0,75.0
+GS070,407726.4,9681383.2,Granite,,
+GS071,409827.9,9682517.2,Granite,53.0,53.0
+GS072,407793.5,9682055.6,Mafic metavolcanic (greenstone),48.0,48.0
+GS073,409025.9,9681061.8,Granite,46.0,67.0
+GS074,409772.3,9681156.8,Granite,,
+GS075,405873.1,9682419.5,Granite,42.0,58.0
+GS076,408103.8,9681192.1,Granite,,
+GS077,408168.7,9682720.5,BIF,43.0,63.0
+GS078,405937.8,9681518.2,Mafic metavolcanic (greenstone),,
+GS079,406247.8,9681680.4,Mafic metavolcanic (greenstone),,
+GS080,408806.9,9680826.6,Granite,51.0,75.0
+GS081,407596.6,9683447.1,Mafic metavolcanic (greenstone),,
+GS082,409778.0,9682139.5,Granite,43.0,72.0
+GS083,407334.7,9684439.3,Laterite cover,,
+GS084,406254.8,9682899.6,Granite,47.0,64.0
+GS085,407365.9,9683326.0,Mafic metavolcanic (greenstone),46.0,73.0
+GS086,406019.3,9683710.6,Granite,39.0,81.0
+GS087,406160.8,9683519.9,Laterite cover,,
+GS088,409040.7,9681795.7,Granite,,
+GS089,407221.4,9682222.9,Quartz vein,39.0,60.0
+GS090,407096.7,9681052.2,Granite,37.0,58.0
+GS091,409276.7,9682982.2,Granite,44.0,78.0
+GS092,408838.1,9681066.1,Granite,,
+GS093,408226.6,9684056.2,Mafic metavolcanic (greenstone),52.0,72.0
+GS094,408117.8,9682613.8,BIF,,
+GS095,409571.1,9681757.2,Granite,,
+GS096,406078.3,9684901.8,Laterite cover,,
+GS097,406771.4,9681025.0,Mafic metavolcanic (greenstone),,
+GS098,409930.6,9681906.7,Granite,43.0,72.0
+GS099,409064.8,9680867.2,Granite,,
+GS100,409680.2,9681121.1,Granite,33.0,82.0
+GS101,408746.6,9680698.8,Granite,39.0,70.0
+GS102,408541.1,9683852.4,Mafic metavolcanic (greenstone),41.0,69.0
+GS103,409432.6,9682056.8,Granite,40.0,74.0
+GS104,407979.8,9684248.1,Mafic metavolcanic (greenstone),38.0,80.0
+GS105,406834.4,9682232.6,Mafic metavolcanic (greenstone),41.0,71.0
+GS106,407899.0,9684849.7,Laterite cover,,
+GS107,409048.4,9683495.6,BIF,47.0,65.0
+GS108,408427.4,9681149.4,Granite,,
+GS109,407654.8,9682026.2,BIF,,
+GS110,407110.8,9683336.1,Mafic metavolcanic (greenstone),,
+GS111,405832.3,9682460.5,Laterite cover,,
+GS112,406478.1,9683481.8,Laterite cover,,
+GS113,409863.9,9682339.7,Granite,48.0,77.0
+GS114,408303.0,9683661.7,Mafic metavolcanic (greenstone),,
+GS115,406170.9,9680959.3,Mafic metavolcanic (greenstone),,
+GS116,405639.1,9683716.1,Granite,41.0,89.0
+GS117,405806.3,9683303.9,Granite,47.0,76.0
+GS118,406323.7,9684359.4,Granite,45.0,61.0
+GS119,405629.6,9681746.7,Mafic metavolcanic (greenstone),,
+GS120,406221.2,9681174.9,Quartz vein,43.0,85.0
+GS121,409096.2,9683342.4,Mafic metavolcanic (greenstone),,
+GS122,406030.2,9682615.7,Granite,37.0,71.0
+GS123,407066.9,9681416.1,BIF,,
+GS124,407725.6,9683275.5,Mafic metavolcanic (greenstone),31.0,75.0
+GS125,409700.5,9682414.2,Granite,,
+GS126,406938.4,9683147.3,Mafic metavolcanic (greenstone),,
+GS127,408350.3,9683729.1,Mafic metavolcanic (greenstone),,
+GS128,409671.9,9681516.4,Granite,39.0,61.0
+GS129,407756.7,9682056.0,Mafic metavolcanic (greenstone),43.0,60.0
+GS130,406255.2,9680722.8,BIF,,
+GS131,407032.1,9681341.6,Mafic metavolcanic (greenstone),37.0,71.0
+GS132,406988.3,9680617.5,Granite,,
+GS133,406087.0,9681564.2,Mafic metavolcanic (greenstone),52.0,74.0
+GS134,407126.6,9681670.4,BIF,54.0,65.0
+GS135,406019.2,9682894.7,Laterite cover,,
+GS136,409001.6,9680870.9,Granite,49.0,65.0
+GS137,406486.0,9683242.0,Granite,49.0,67.0
+GS138,408422.1,9681711.7,Granite,,
+GS139,405990.1,9682909.9,Laterite cover,,
+GS140,408599.5,9683889.7,Mafic metavolcanic (greenstone),,
+GS141,409966.5,9682621.2,Granite,,
+GS142,405681.1,9684582.4,Granite,48.0,70.0
+GS143,409267.3,9684154.8,Mafic metavolcanic (greenstone),30.0,64.0
+GS144,408390.5,9682992.1,BIF,46.0,89.0
+GS145,408034.0,9684451.6,Granite,52.0,76.0
+GS146,408331.3,9682902.9,BIF,,
+GS147,406009.3,9681864.6,Mafic metavolcanic (greenstone),,
+GS148,409733.4,9682474.1,Granite,48.0,56.0
+GS149,407886.1,9681807.2,Granite,50.0,82.0
+GS150,408513.3,9682260.1,Granite,63.0,77.0
+GS151,407339.1,9683267.0,Mafic metavolcanic (greenstone),45.0,87.0
+GS152,407510.2,9684308.3,Laterite cover,,
+GS153,408214.9,9682359.6,Mafic metavolcanic (greenstone),,
+GS154,408774.1,9680646.4,Granite,,
+GS155,408694.0,9683068.2,BIF,47.0,70.0
+GS156,407535.7,9684391.1,Laterite cover,,
+GS157,408405.1,9681694.9,Granite,,
+GS158,405812.7,9682323.5,Laterite cover,,
+GS159,408266.1,9681993.6,Granite,,
+GS160,406104.2,9683047.3,Laterite cover,,

@@ -9,6 +9,7 @@ from pyproj import Transformer
 
 from geoai import export, indices, lineaments, lithology, pca, terrain
 from geoai.imagery import sentinel
+from ui import state
 
 ss = st.session_state
 VEG_NDVI = 0.4
@@ -30,11 +31,9 @@ DEFAULTS = {
 
 
 def keep_widget_state():
-    """Streamlit forgets widget values of tabs that are not shown; re-saving them keeps user choices."""
+    """Defaults for the Step-3 widgets (remembered values win; see ui/state.py)."""
     for k, v in DEFAULTS.items():
-        ss.setdefault(k, v)
-    for k in [k for k in ss.keys() if isinstance(k, str) and k.startswith("rs_")]:
-        ss[k] = ss[k]
+        state.initial(k, v)
 
 
 # ---------- scene state ----------

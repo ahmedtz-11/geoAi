@@ -6,6 +6,7 @@ from pyproj import Transformer
 
 from geoai import export
 from geoai.imagery import basemap
+from ui.state import fragment
 
 
 @st.cache_data(show_spinner=False, ttl=3600, max_entries=20)
@@ -13,7 +14,7 @@ def cached_basemap(bbox, max_tiles):
     return basemap.satellite_image(bbox, max_tiles=max_tiles)
 
 
-@st.fragment
+@fragment
 def render(aoi):
     st.caption("Best available high-resolution mosaic (sub-metre to a few metres). Capture date varies by location.")
     detail = st.select_slider("Detail", ["Standard", "High", "Very high"], "High", key="img_detail")

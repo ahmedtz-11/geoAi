@@ -6,6 +6,7 @@ import streamlit as st
 from geoai import export, indices
 
 from .common import crosta, get_scene, header, index_layer, need_scene, show_fig, ss, usable_mask
+from ui.state import fragment
 
 CFG = {
     "iron": {
@@ -29,7 +30,7 @@ CFG = {
 }
 
 
-@st.fragment
+@fragment
 def render(aoi, kind):
     cfg = CFG[kind]
     st.caption(cfg["caption"])

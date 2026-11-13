@@ -6,9 +6,10 @@ import streamlit as st
 from geoai import export, indices, pca
 
 from .common import crosta, get_scene, header, need_scene, show_fig, std_pca
+from ui.state import fragment
 
 
-@st.fragment
+@fragment
 def render(aoi):
     st.caption("Principal Component Analysis turns correlated bands into uncorrelated components. PC1 holds "
                "overall brightness and topography; the later PCs hold the subtle spectral differences between "

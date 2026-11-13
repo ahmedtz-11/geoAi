@@ -16,3 +16,5 @@ rasterio>=1.4
 pystac-client
 planetary-computer
 scikit-image
+# Section 2 - magnetics (IGRF field direction for RTP / RTE)
+ppigrf

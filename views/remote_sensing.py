@@ -116,6 +116,8 @@ try:
 except Exception as e:
     st.error(str(e))
     st.stop()
+_e, _n = aoi.to_utm()
+ss["rs_aoi"] = {"epsg": aoi.utm_epsg, "bounds": (float(min(_e)), float(max(_e)), float(min(_n)), float(max(_n)))}
 for note in aoi.notes:
     st.warning(note)
 

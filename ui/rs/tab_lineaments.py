@@ -7,9 +7,10 @@ from geoai import export, lineaments
 
 from .common import get_scene, header, hillshades, lineament_result, need_scene, show_fig, ss, std_pca
 from geoai import terrain
+from ui.state import fragment
 
 
-@st.fragment
+@fragment
 def render(aoi):
     st.caption("Lineaments are straight to gently curved linear features (valleys, ridges, tonal boundaries) "
                "that often follow faults, shear zones, fractures, dykes and contacts, which control many gold "

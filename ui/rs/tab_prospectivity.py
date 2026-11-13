@@ -6,6 +6,7 @@ from geoai import export, lineaments, prospectivity
 
 from .common import (current_lineaments, get_scene, header, index_layer, lith, need_scene, show_fig, ss,
                      usable_mask, zones_table)
+from ui.state import fragment
 
 LAYERS = {
     "clay": ("Clay / hydroxyl alteration", "rs_p_w_clay", "Purples"),
@@ -16,7 +17,7 @@ LAYERS = {
 }
 
 
-@st.fragment
+@fragment
 def render(aoi):
     st.caption("Combines the evidence for gold into one map. Each layer is scaled from 0 (unfavourable) to 1 "
                "(most favourable), weighted, and summed. The brightest ground has alteration, structure and "

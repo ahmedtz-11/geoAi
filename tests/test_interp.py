@@ -290,3 +290,39 @@ def test_pit_register_roundtrip(tmp_path):
     pits.save_register(path, pits.register_rows("Site B", p, t.head(0), epsg))
     assert set(pits.load_register(path).project) == {"Site A", "Site B"}
     assert "<Placemark>" in pits.to_kml("Site A", p, t)
+
+
+# ---------- IP inversion ----------
+def test_ip_sensitivity_kernel_integrates_to_halfspace_total():
+    from geoai import ipinv
+    ze = np.r_[0, np.cumsum(5 * 1.1 ** np.arange(60))]
+    for s in (10.0, -30.0):
+        T = ipinv._template(s, 10.0, 600, ze)
+        assert T.sum() * 2 * np.pi * abs(s) == pytest.approx(1.0, abs=0.01)
+
+
+def test_ip_inversion_recovers_chargeable_body():
+    from geoai import ipdata, ipinv
+    df = pd.read_csv(os.path.join(os.path.dirname(__file__), "..", "sample_data", "ip_electrodes_L1.csv"))
+    g, arr, a = ipdata.geometry(df)
+    assert arr == "Dipole-dipole" and a == 20
+    inv = ipinv.invert(df.Tx1, df.Tx2, df.Rx1, df.Rx2, df.M, g.station_x, g.pseudo_depth)
+    an = ipinv.anomalies(inv, np.percentile(inv["model"][inv["mask"]], 95))
+    assert 270 <= an["peak_x"] <= 350 and 20 <= an["peak_depth"] <= 65      # body planted at 280-340 m, 25-60 m deep
+    assert an["peak"] > 3 * np.median(inv["model"][inv["mask"]])
+    assert inv["abs_error"] < 0.1 * np.median(df.M) + 0.5
+    import matplotlib.pyplot as plt
+    plt.close(ipinv.figure(inv, "L1"))
+
+
+def test_resistivity_inversion_recovers_conductor_and_resistor():
+    from geoai import ipdata, ipinv
+    df = pd.read_csv(os.path.join(os.path.dirname(__file__), "..", "sample_data", "ip_electrodes_L1.csv"))
+    g, _, _ = ipdata.geometry(df)
+    inv = ipinv.invert(df.Tx1, df.Tx2, df.Rx1, df.Rx2, df.Rho, g.station_x, g.pseudo_depth, log=True)
+    (lo, lx, lz), (hi, hx, hz) = ipinv.extremes(inv)
+    assert 270 <= lx <= 350 and 20 <= lz <= 65 and lo < 120            # conductor planted at 280-340 m, 25-60 m, 40 ohm.m
+    assert 90 <= hx <= 190 and hz < 20 and hi > 700                    # resistive cap at 100-180 m, top 15 m, 1500 ohm.m
+    assert inv["abs_error"] < 6                                        # per cent; 3 % noise was added
+    import matplotlib.pyplot as plt
+    plt.close(ipinv.figure(inv, "L1"))

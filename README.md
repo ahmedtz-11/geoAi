@@ -41,6 +41,31 @@ field notes can be added.
 
 Sample: `sample_data/pits_sample.xlsx` and `pits_notes.txt` (trend 045°, an untested gap, two barren pits).
 
+## IP: inverse model chargeability and resistivity sections
+
+For files that carry electrode positions (Tx1, Tx2, Rx1, Rx2, as exported by IRIS Prosys), each
+line is inverted and drawn in the Res2DInv layout: "Inverse Model Chargeability Section", the 17-colour scale
+with its block legend, depth axis at the model layers, iteration number and absolute error, and unit electrode
+spacing. A switch above the images goes back to the measured pseudosection.
+
+The ground under the line is divided into blocks one electrode spacing wide, in layers that thicken with
+depth. Apparent chargeability is the sensitivity-weighted average of the block chargeabilities (Seigel, 1959),
+so the block values are found by smoothness-constrained least squares (Loke & Barker, 1995), kept positive,
+with readings that will not fit down-weighted. The sensitivities are those of a homogeneous half-space; they
+are checked in the tests against direct integration and against the analytic half-space total.
+
+The **Inverse Model Resistivity Section** uses the same solver on logarithms of apparent resistivity (the
+Rho column), has the same layout, reports its error in per cent, and uses logarithmic colour intervals. Each
+quantity applies its own quality filters, so a reading with a bad chargeability can still serve resistivity.
+The ZIP download holds both sections for every line.
+
+Res2DInv goes one step further: it inverts resistivity too and recomputes the sensitivities for that
+resistivity model. Expect the same anomalies in the same places, with differences in shape and amplitude
+where the ground resistivity changes sharply. Files without electrode positions keep the pseudosection.
+
+Sample: `sample_data/ip_electrodes_L1.csv` (dipole-dipole, a = 20 m, chargeable body planted at 280-340 m,
+25-60 m deep, which is also a 40 ohm.m conductor; a 1500 ohm.m resistive cap at 100-180 m in the top 15 m).
+
 ## Project layout
 
 ```
@@ -82,6 +107,7 @@ geoai/                     reusable logic (no Streamlit inside)
   geophysics.py            survey geometry, minimum-curvature gridding, FFT filters, Euler deconvolution,
                            spectral depth, IP sections
   magnetics.py             IGRF field direction, RTP / RTE, VD, AS, tilt, THDR, SPI, magnetic analysis
+  ipinv.py                 IP inversion: half-space sensitivities, smoothness-constrained solve, Res2DInv-style figure
   geochem.py               lab value cleaning, log thresholds, classes, correlation, gold index
   geology.py               lithology / structural measurements, rose, stereonet poles
   imagegrid.py             map picture colours -> relative values

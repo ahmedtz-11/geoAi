@@ -326,3 +326,36 @@ def test_resistivity_inversion_recovers_conductor_and_resistor():
     assert inv["abs_error"] < 6                                        # per cent; 3 % noise was added
     import matplotlib.pyplot as plt
     plt.close(ipinv.figure(inv, "L1"))
+
+
+# ---------- Res2DInv .dat ----------
+def test_res2dinv_general_array_file_matches_electrode_csv():
+    import io
+    from geoai import ipdata, readers
+    here = os.path.join(os.path.dirname(__file__), "..", "sample_data")
+    f = io.BytesIO(open(os.path.join(here, "ip_res2dinv_L1.dat"), "rb").read())
+    f.name = "ip_res2dinv_L1.dat"
+    out = readers.read_upload(f)
+    df, ref = out["df"], pd.read_csv(os.path.join(here, "ip_electrodes_L1.csv"))
+    assert out["meta"]["format"] == "Res2DInv" and out["meta"]["ip_unit"] == "mV/V" and len(df) == len(ref)
+    for a, b in (("Tx1", "Tx1"), ("Rx2", "Rx2"), ("Rho", "Rho"), ("M", "M")):
+        assert np.allclose(df[a], ref[b], atol=1e-3)
+    g, arr, a = ipdata.geometry(df)                       # n-level worked out from the electrodes
+    assert arr == "Dipole-dipole" and a == 20 and np.allclose(g.n_level, ref.n)
+
+
+def test_res2dinv_pole_dipole_and_index_format():
+    from geoai import ipdata, res2d
+    general = "\r\n".join(["Line 1", "20.0", "11", "6", "Type of measurement (0=app. resistivity,1=resistance)", "0",
+                           "2", "0", "1", "Chargeability", "msec.", "0.0,1.0",
+                           "3 -20.0 0.0 20.0 0.0 0.0 0.0 63.8 , 4.129", "3 -20.0 0.0 40.0 0.0 20.0 0.0 138.98 , 3.928",
+                           "0", "0"])
+    assert res2d.looks_like(general)
+    df, meta = res2d.parse(general)
+    assert meta["array"] == "Pole-dipole" and meta["ip_unit"] == "msec." and list(df.M) == [4.129, 3.928]
+    g, arr, a = ipdata.geometry(df)
+    assert arr == "Pole-dipole" and list(g.n_level) == [1, 2] and list(g.station_x) == [-5.0, 5.0]
+    index = "\n".join(["Dipole line", "10.0", "3", "2", "1", "0", "25.0 10.0 3 120.5", "40.0 10.0 1 80.0", "0"])
+    df, meta = res2d.parse(index)                         # x = midpoint, a = 10, n = 3 -> electrodes 0,10 | 40,50
+    assert "M" not in df and sorted(df.iloc[0][["Tx1", "Tx2", "Rx1", "Rx2"]]) == [0, 10, 40, 50]
+    assert not res2d.looks_like("X,Y,TMI\n1,2,3\n4,5,6\n7,8,9")

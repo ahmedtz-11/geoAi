@@ -39,7 +39,7 @@ def num(text):
 
 
 st.title("3 · IP (induced polarisation)")
-st.caption("Upload one file per survey line (.csv or .txt). Each line gives one pseudosection image showing where "
+st.caption("Upload one file per survey line (.csv, .txt, or a Res2DInv .dat). Each line gives one pseudosection image showing where "
            "chargeability (or resistivity) is anomalous and at what depth.")
 
 # ---------- step 1: lines ----------
@@ -50,7 +50,7 @@ for i in range(n_lines):
     with st.container(border=True):
         c1, c2 = st.columns([1, 3])
         name = c1.text_input(f"Line {i + 1} name", f"L{i + 1}", key=f"ip_name_{i}")
-        f = c2.file_uploader(f"File for line {name}", type=["csv", "txt"], key=f"ip_file_{i}")
+        f = c2.file_uploader(f"File for line {name}", type=["csv", "txt", "dat"], key=f"ip_file_{i}")
         p1, p2, p3 = st.columns(3)
         e0 = p1.text_input("Line start easting (m, optional)", "", key=f"ip_e0_{i}",
                            help="With the start northing and bearing, places a line whose stations are distances "
@@ -67,6 +67,8 @@ specs, settings, summary = [], {}, []
 if uploaded:
     first = upload._read(uploaded[0]["file"].name, uploaded[0]["file"].getvalue(), None)
     df0 = first["df"]
+    meta0 = first.get("meta") or {}
+    ip_unit = (meta0.get("ip_unit") or "mV/V").rstrip(".")
     cols = list(df0.columns)
     electrodes = ipdata.has_electrodes(df0)
     st.markdown("**Columns** (the same layout is used for every line file)")
@@ -75,13 +77,17 @@ if uploaded:
     if electrodes:
         ec = ipdata.electrode_columns(df0)
         _, arr0, a0 = ipdata.geometry(df0)
+        if meta0.get("format") == "Res2DInv":
+            st.info(f"Res2DInv data file: **{meta0['title']}** · {meta0['array']} · unit electrode spacing "
+                    f"{meta0['unit_spacing']:g} m · {meta0['read']} of {meta0['declared']} readings read"
+                    + (f" · IP: {meta0['ip_name']} in {ip_unit}" if meta0.get("ip_name") else " · no IP data") + ".")
         st.success(f"Electrode positions found ({ec['c1']}, {ec['c2']}, {ec['p1']}, {ec['p2']}): **{arr0}** array, "
                    f"dipole a = **{a0:g} m**. Station positions and pseudo-depths are calculated from the electrodes "
                    "(remote electrodes such as 9999999 are ignored).")
         c1, c2 = st.columns(2)
         others = [c for c in readers.numeric_columns(df0) if c not in (ec["m"], ec["rho"])]
         values = [c for c in (ec["m"], ec["rho"]) if c] + others
-        labels = {ec["m"]: f"Chargeability {ec['m']} (mV/V)", ec["rho"]: f"Apparent resistivity {ec['rho']} (ohm·m)"}
+        labels = {ec["m"]: f"Chargeability {ec['m']} ({ip_unit})", ec["rho"]: f"Apparent resistivity {ec['rho']} (ohm·m)"}
         vcol = c1.selectbox("Value to show", values, format_func=lambda c: labels.get(c, str(c)), key="ip_vcol_e")
         arrays = ["Pole-dipole", "Dipole-dipole", "Wenner", "Schlumberger", "Pole-pole"]
         array = c2.selectbox("Array", arrays, arrays.index(arr0) if arr0 in arrays else 0, key="ip_array_e",
@@ -234,7 +240,8 @@ if go:
                         e["c1"], e["c2"], e["p1"], e["p2"], e["v"], e["px"], e["pz"], log=kind == "resistivity")
                 except Exception as err:
                     run["errors"].append(f"{s['line_name']}: could not invert {kind} ({err}).")
-        runs["ip"] = {"run": run, "sig": sig, "specs": specs, "settings": settings, "inversions": inversions}
+        runs["ip"] = {"run": run, "sig": sig, "specs": specs, "settings": settings, "inversions": inversions,
+                      "ip_unit": ip_unit if electrodes else "mV/V"}
         clear_widgets("ip")
         ss.pop("s2_combined", None)
         bar.empty()
@@ -251,28 +258,23 @@ if not entry:
 
 # ---------- step 3: images ----------
 run = entry["run"]
-st.subheader("Step 3 · Sections (one image per line)")
+st.subheader("Step 3 · Inverse model sections")
 all_inv = entry.get("inversions") or {}
-KINDS = {"Inverse model chargeability": "chargeability", "Inverse model resistivity": "resistivity"}
-IMAGES = [k for k, v in KINDS.items() if all_inv.get(v)] + ["Pseudosection (measured)"]
-image = st.radio(
-    "Image", IMAGES, horizontal=True, key="ip_image_kind",
-    help="**Inverse model** sections show the chargeability or resistivity of the ground itself at true "
-         "depth, found by inversion and drawn the way Res2DInv draws them, one per line. **Pseudosection**: "
-         "the readings as measured, plotted at approximate pseudo-depths.") if len(IMAGES) > 1 else IMAGES[0]
-kind = KINDS.get(image)
-inversions = all_inv.get(kind, {}) if kind else {}
-inverse = bool(inversions)
-resist = kind == "resistivity"
-if not all_inv:
-    st.caption("The inverse model sections need files with electrode positions (Tx1, Tx2, Rx1, Rx2 "
-               "columns, as exported by IRIS Prosys). These files have none, so pseudosections are shown.")
+ip_unit = entry.get("ip_unit", "mV/V")
+if all_inv:
+    st.caption("For every line: the **Inverse Model Resistivity Section** above the **Inverse Model Chargeability "
+               "Section**, on the same distance and depth axes so they can be compared directly.")
+else:
+    st.caption("Inverse model sections need files with electrode positions (a Res2DInv .dat file, or Tx1, Tx2, Rx1, "
+               "Rx2 columns as exported by IRIS Prosys). These files have none, so the measured pseudosection is "
+               "shown instead.")
 c1, c2, c3 = st.columns([2, 2, 1])
-pct = c1.slider("Anomaly outline (percentile of all values)", 50, 99, 95, key="ip_pct",
+pct = c1.slider("Chargeability outline (percentile of all values)" if all_inv else
+                "Anomaly outline (percentile of all values)", 50, 99, 95, key="ip_pct",
                 help="The black line encloses values above this percentile of all lines together.")
-stretch = c2.slider("Colour stretch (upper percentile)", 80.0, 100.0, 98.0, 0.5, key="ip_stretch",
-                    help="Lower it when a few extreme readings make the rest of the section one colour.") \
-    if not inverse else 98.0
+stretch = 98.0 if all_inv else c2.slider(
+    "Colour stretch (upper percentile)", 80.0, 100.0, 98.0, 0.5, key="ip_stretch",
+    help="Lower it when a few extreme readings make the rest of the section one colour.")
 if c3.button("Clear results", key="clear_ip"):
     runs.pop("ip", None)
     ss.pop("s2_combined", None)
@@ -285,50 +287,59 @@ if not items:
     st.stop()
 allv = np.concatenate([ds["v"] for ds, _ in items])
 thr = float(np.nanpercentile(allv[np.isfinite(allv)], pct))
-if inverse:        # one colour scale and one outline value for all lines, taken from the models
-    levels = ipinv.levels_for(list(inversions.values()))
-    mv = np.concatenate([i["model"][i["mask"]] for i in inversions.values()])
-    thr_model = None if resist else float(np.percentile(mv, pct))
+# one colour scale per quantity for all lines, and one outline value for chargeability
+ORDER = ["resistivity", "chargeability"]
+levels = {k: ipinv.levels_for(list(all_inv[k].values())) for k in ORDER if all_inv.get(k)}
+thr_model = float(np.percentile(np.concatenate([i["model"][i["mask"]] for i in all_inv["chargeability"].values()]),
+                                pct)) if all_inv.get("chargeability") else None
 images = {}
+
+
+def describe(kind, inv, lid):
+    if kind == "resistivity":
+        (lo, lx, lz), (hi, hx, hz) = ipinv.extremes(inv)
+        return (f"**Resistivity**: most conductive ground **{lo:,.0f} ohm.m** at {lx:,.0f} m, {lz:.0f} m deep; most "
+                f"resistive **{hi:,.0f} ohm.m** at {hx:,.0f} m, {hz:.0f} m deep · {inv['n']} readings · iteration "
+                f"{inv['iteration']}, abs. error {inv['abs_error']:.2g} %.")
+    an = ipinv.anomalies(inv, thr_model)
+    if an and an["zone"]:
+        x0, x1, z0, z1 = an["zone"]
+        return (f"**Chargeability**: strongest zone from **{x0:,.0f} to {x1:,.0f} m**, **{z0:.0f}–{z1:.0f} m** deep"
+                + (" and still open at the bottom of the model" if an["open_at_depth"] else "")
+                + f", peak {an['peak']:.1f} {ip_unit} at {an['peak_x']:,.0f} m, {an['peak_depth']:.0f} m deep "
+                f"(black outline ≥ {thr_model:.1f} {ip_unit}) · {inv['n']} readings · iteration {inv['iteration']}, "
+                f"abs. error {inv['abs_error']:.2g} {ip_unit}.")
+    return (f"**Chargeability**: nothing above the outline value ({thr_model:.1f} {ip_unit}) · {inv['n']} readings · "
+            f"abs. error {inv['abs_error']:.2g} {ip_unit}.")
+
+
 for ds, r in items:
     for lid, L in r["lines"].items():
+        found = [(k, all_inv[k][ds["name"]]) for k in ORDER if ds["name"] in all_inv.get(k, {})]
+        if found:
+            with st.container(border=True):
+                st.markdown(f"#### Line {lid}")
+                for kind, inv in found:
+                    resist = kind == "resistivity"
+                    fig = ipinv.figure(inv, f"Line {lid}", "ohm.m" if resist else ip_unit, levels[kind],
+                                       None if resist else thr_model)
+                    st.pyplot(fig)
+                    png = export.fig_to_png(fig, 150)
+                    plt.close(fig)
+                    fname = f"ip_inverse_{kind}_{safe_name(lid)}.png"
+                    images[fname] = png
+                    c1, c2 = st.columns([3, 1])
+                    c1.markdown(describe(kind, inv, lid))
+                    c2.download_button("Download PNG", png, fname, "image/png", on_click="ignore",
+                                       key=f"ip_inv_png_{kind}_{safe_name(lid)}")
+            continue
+        # no inversion for this line (no electrode positions): the measured pseudosection
         d = L["data"].dropna()
         unit = ds["survey"].split("(")[-1].strip(")")
         param = "Chargeability" if "charge" in ds["survey"] else "Resistivity"
+        unit = ip_unit if param == "Chargeability" else unit
         cmap = "jet" if param == "Chargeability" else "viridis"
         title = f"{param} pseudosection · line {lid}  (black outline ≥ {thr:.1f} {unit})"
-        inv = inversions.get(ds["name"]) if inverse else None
-        if inv is not None:
-            unit = "ohm.m" if resist else "mV/V"
-            fig = ipinv.figure(inv, f"Line {lid}", unit, levels, thr_model)
-            with st.container(border=True):
-                st.pyplot(fig)
-                an = None if resist else ipinv.anomalies(inv, thr_model)
-                c1, c2 = st.columns([3, 1])
-                if resist:
-                    (lo, lx, lz), (hi, hx, hz) = ipinv.extremes(inv)
-                    c1.markdown(f"**Line {lid}**: most conductive ground **{lo:,.0f} ohm.m** at {lx:,.0f} m, "
-                                f"{lz:.0f} m deep; most resistive **{hi:,.0f} ohm.m** at {hx:,.0f} m, {hz:.0f} m "
-                                f"deep · {inv['n']} readings · iteration {inv['iteration']}, abs. error "
-                                f"{inv['abs_error']:.2g} %.")
-                elif an and an["zone"]:
-                    x0, x1, z0, z1 = an["zone"]
-                    c1.markdown(f"**Line {lid}**: strongest chargeable zone from **{x0:,.0f} to {x1:,.0f} m**, "
-                                f"**{z0:.0f}–{z1:.0f} m** deep"
-                                + (" and still open at the bottom of the model" if an["open_at_depth"] else "")
-                                + f", peak {an['peak']:.1f} {unit} at {an['peak_x']:,.0f} m, "
-                                f"{an['peak_depth']:.0f} m deep (black outline ≥ {thr_model:.1f} {unit}) · "
-                                f"{inv['n']} readings · iteration {inv['iteration']}, abs. error "
-                                f"{inv['abs_error']:.2g} {unit}.")
-                else:
-                    c1.markdown(f"**Line {lid}**: nothing above the outline value ({thr_model:.1f} {unit}) · "
-                                f"{inv['n']} readings · abs. error {inv['abs_error']:.2g} {unit}.")
-                png = export.fig_to_png(fig, 150)
-                images[f"ip_inverse_{kind}_{safe_name(lid)}.png"] = png
-                c2.download_button("Download PNG", png, f"ip_inverse_{kind}_{safe_name(lid)}.png", "image/png",
-                                   on_click="ignore", key=f"ip_inv_png_{kind}_{safe_name(lid)}")
-            plt.close(fig)
-            continue
         try:
             xi, zi, G = geophysics.section_grid(d.x, d.depth, d.v)
             fig = plots.section_figure(xi, zi, G, (d.x, d.depth), thr, title, cmap, f"{param} ({unit})", stretch)
@@ -358,24 +369,16 @@ def _zip():
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for n, b in images.items():
             z.writestr(n, b)
-        for other, group in all_inv.items():            # the inverse sections not on screen right now
-            if other == kind:
-                continue
-            lv = ipinv.levels_for(list(group.values()))
-            for name, inv in group.items():
-                fig = ipinv.figure(inv, name.split(" · ")[0], None, lv)
-                z.writestr(f"ip_inverse_{other}_{safe_name(name.split(' · ')[0])}.png", export.fig_to_png(fig, 150))
-                plt.close(fig)
     return buf.getvalue()
 
 
-st.download_button("Download all images (ZIP, includes both inverse sections for every line)", _zip, "ip_sections.zip", "application/zip", on_click="ignore",
+st.download_button("Download all images (ZIP)", _zip, "ip_sections.zip", "application/zip", on_click="ignore",
                    key="ip_zip")
 st.caption("High chargeability usually means disseminated sulphides (pyrite, arsenopyrite), often linked to gold, "
            "but graphite also responds; compare with resistivity and geology. The inverse model section is a "
            "smoothness-constrained inversion using half-space sensitivities (Loke & Barker, 1995). Res2DInv also "
            "inverts resistivity and updates the sensitivities for it, so its section will differ in detail, most "
-           "where the ground resistivity changes sharply. Pseudosection depths are approximate pseudo-depths.")
+           "where the ground resistivity changes sharply.")
 st.divider()
 st.page_link("views/interpretation.py", label="Next: combine with your other data in **6 · Integrated gold "
                                               "prediction**", icon="➡️")

@@ -85,8 +85,11 @@ def geometry(df, array=None):
     if c["n"] is not None:
         n = parse_column(df[c["n"]]).to_numpy(float)
     else:  # separation between the nearest current electrode and P1, in dipole lengths
-        near = np.where(np.isnan(e["c2"]), e["c1"], e["c2"])
-        n = np.round(np.abs(e["p1"] - near) / np.where(a > 0, a, np.nan))
+        gap = np.full(len(a), np.nan)                 # nearest current-to-potential electrode distance
+        for ck in ("c1", "c2"):
+            for pk in ("p1", "p2"):
+                gap = np.fmin(gap, np.abs(e[pk] - e[ck]))
+        n = np.round(gap / np.where(a > 0, a, np.nan))
     arr = array or array_name(df) or ("Pole-dipole" if np.isnan(e["c1"]).all() or np.isnan(e["c2"]).all()
                                       else "Dipole-dipole")
     depth = depth_factor(n, arr) * np.where(np.isfinite(a), a, a_med)

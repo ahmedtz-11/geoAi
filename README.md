@@ -46,7 +46,8 @@ Sample: `sample_data/pits_sample.xlsx` and `pits_notes.txt` (trend 045°, an unt
 For files that carry electrode positions (Tx1, Tx2, Rx1, Rx2, as exported by IRIS Prosys), each
 line is inverted and drawn in the Res2DInv layout: "Inverse Model Chargeability Section", the 17-colour scale
 with its block legend, depth axis at the model layers, iteration number and absolute error, and unit electrode
-spacing. A switch above the images goes back to the measured pseudosection.
+spacing. For every line the resistivity section is shown above the chargeability section, on the same
+axes, for direct comparison. The measured pseudosection is shown only for files without electrode positions.
 
 The ground under the line is divided into blocks one electrode spacing wide, in layers that thicken with
 depth. Apparent chargeability is the sensitivity-weighted average of the block chargeabilities (Seigel, 1959),
@@ -58,6 +59,10 @@ The **Inverse Model Resistivity Section** uses the same solver on logarithms of 
 Rho column), has the same layout, reports its error in per cent, and uses logarithmic colour intervals. Each
 quantity applies its own quality filters, so a reading with a bad chargeability can still serve resistivity.
 The ZIP download holds both sections for every line.
+
+**Res2DInv .dat files** are read directly (general array format 11, and the index formats for Wenner,
+pole-pole, dipole-dipole, pole-dipole and Wenner-Schlumberger), with or without IP. The title, array, unit
+spacing and IP unit (for example msec) come from the file header and are used on the sections.
 
 Res2DInv goes one step further: it inverts resistivity too and recomputes the sensitivities for that
 resistivity model. Expect the same anomalies in the same places, with differences in shape and amplitude
@@ -107,6 +112,7 @@ geoai/                     reusable logic (no Streamlit inside)
   geophysics.py            survey geometry, minimum-curvature gridding, FFT filters, Euler deconvolution,
                            spectral depth, IP sections
   magnetics.py             IGRF field direction, RTP / RTE, VD, AS, tilt, THDR, SPI, magnetic analysis
+  res2d.py                 Res2DInv .dat reader (general array and index formats)
   ipinv.py                 IP inversion: half-space sensitivities, smoothness-constrained solve, Res2DInv-style figure
   geochem.py               lab value cleaning, log thresholds, classes, correlation, gold index
   geology.py               lithology / structural measurements, rose, stereonet poles

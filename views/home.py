@@ -14,7 +14,7 @@ CARDS = [
      "**You get:** TMI, RTP/RTE, 1VD, 2VD, analytic signal, tilt, THDR, lineaments, upward continuation, "
      "SPI and Euler depths, and a magnetic target map."),
     ("⚡ 3 · IP", "views/ip.py",
-     "**Input:** one file per survey line (.csv / .txt).\n\n"
+     "**Input:** one file per survey line (.csv / .txt / Res2DInv .dat).\n\n"
      "**You get:** one pseudosection image per line, with anomaly position and depth."),
     ("🪨 4 · Geology", "views/geology.py",
      "**Input:** mapping points with lithology, strike and dip, or a geological map.\n\n"

@@ -170,6 +170,10 @@ def read_upload(f, sheet=None):
         df.columns = [str(c).strip() for c in df.columns]
         return {"kind": "table", "df": df.replace({d: np.nan for d in DUMMIES if d})}
     text = raw.decode("utf-8", errors="ignore")
+    from . import res2d
+    if res2d.looks_like(text):                   # Res2DInv resistivity / IP data file
+        df, meta = res2d.parse(text)
+        return {"kind": "table", "df": df, "meta": meta}
     return {"kind": "table", "df": parse_text_table(text)}
 
 

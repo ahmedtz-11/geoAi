@@ -16,7 +16,7 @@ from geoai import coords, export
 from geoai.imagery import basemap
 from geoai.io import read_raw_table
 from ui.rs import (common, data_panel, tab_dem, tab_image, tab_index, tab_lineaments, tab_lithology, tab_pca,
-                   tab_prospectivity, tab_ratios)
+                   tab_prospectivity, tab_ratios, tab_terrain3d)
 
 ss = st.session_state
 common.keep_widget_state()
@@ -151,10 +151,10 @@ data_panel.render(aoi)
 
 TABS = ["High-resolution image", "Iron oxide/ferric iron", "Clay/hydroxyl alteration",
         "Band ratios", "PCA images", "Lithological classification", "Geological lineaments",
-        "DEM / hillshade", "⭐ Integrated prospectivity"]
+        "DEM / hillshade", "3-D terrain", "⭐ Integrated prospectivity"]
 RENDER = [tab_image.render, lambda a: tab_index.render(a, "iron"), lambda a: tab_index.render(a, "clay"),
           tab_ratios.render, tab_pca.render, tab_lithology.render, tab_lineaments.render, tab_dem.render,
-          tab_prospectivity.render]
+          tab_terrain3d.render, tab_prospectivity.render]
 # lazy tabs: only the selected tab runs, so the page stays fast
 for tab, render in zip(st.tabs(TABS, key="step3_tab", on_change="rerun"), RENDER):
     if tab.open:

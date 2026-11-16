@@ -225,3 +225,134 @@ def test_load_dem_with_local_tile(tmp_path):
     epsg, tr, w, h = sentinel.target_grid(aoi, 30)
     out = dem_mod.load_dem(aoi, epsg, tr, w, h, items=[{"assets": {"data": {"href": str(p)}}}], opener=rasterio.open)
     assert np.allclose(out[np.isfinite(out)], 1234.5) and np.isfinite(out).mean() > 0.9
+
+
+# ---------- 3-D terrain view ----------
+def _synthetic_dem():
+    from rasterio.transform import from_origin
+    h, w, res = 300, 420, 20.0
+    Y, X = np.mgrid[0:h, 0:w]
+    dem = 900 + 240 * np.exp(-((X - Y * 0.7 - 120) / 35.) ** 2) + 0.05 * X
+    dem[20:30, 20:35] = np.nan                                   # a hole in the data
+    return dem, res, from_origin(400000, 9700000, res, res)
+
+
+def test_block_mean_ignores_holes_and_keeps_the_average():
+    from geoai import terrain3d
+    a = np.arange(36, dtype=float).reshape(6, 6)
+    a[0, 0] = np.nan
+    out = terrain3d.block_mean(a, 2)
+    assert out.shape == (3, 3)
+    assert out[0, 0] == pytest.approx(np.nanmean([np.nan, 1, 6, 7]))     # the hole is skipped, not zero
+    assert out[2, 2] == pytest.approx(np.mean([28, 29, 34, 35]))
+    all_nan = terrain3d.block_mean(np.full((4, 4), np.nan), 2)           # a block of only holes stays a hole
+    assert np.isnan(all_nan).all()
+    assert terrain3d.block_mean(a, 1) is a                               # no reduction needed
+
+
+def test_terrain3d_picture_drape_builds_a_mesh_with_true_coordinates():
+    from geoai import terrain, terrain3d
+    dem, res, tr = _synthetic_dem()
+    hs = terrain.hillshade(dem, res, 315, 45)
+    rgb = terrain3d.shaded_rgb(dem, hs)
+    assert rgb.shape == dem.shape + (3,) and 0 <= np.nanmin(rgb) and np.nanmax(rgb) <= 1
+    aoi = ([400500.0, 407500.0, 407500.0, 400500.0], [9699500.0, 9699500.0, 9694500.0, 9694500.0])
+    fig, step, cell = terrain3d.figure(dem, res, tr, rgb, exaggeration=5.0, max_side=150, aoi_utm=aoi)
+    mesh, outline = fig.data
+    assert mesh.type == "mesh3d" and outline.type == "scatter3d"
+    assert step == 3 and cell == pytest.approx(60.0)
+    assert len(mesh.x) == (300 // 3) * (420 // 3) == len(mesh.vertexcolor)
+    assert len(mesh.i) < 2 * 99 * 139                            # triangles touching the hole are dropped
+    # eastings and northings are the real ones, elevations are not stretched in the data
+    assert mesh.x.min() == pytest.approx(400000 + 0.5 * 60) and mesh.x.max() == pytest.approx(400000 + 139.5 * 60)
+    assert mesh.z.max() == pytest.approx(np.nanmax(terrain3d.block_mean(dem, 3)), rel=1e-6)
+    # the stretch lives only in the drawing box: 5 x the true relief/width ratio
+    ar = fig.layout.scene.aspectratio
+    relief = np.nanmax(mesh.z) - np.nanmin(mesh.z)
+    assert ar.z == pytest.approx(5 * relief / (mesh.x.max() - mesh.x.min()), rel=0.02)
+    assert outline.z.min() > np.nanmin(mesh.z)                   # the outline sits on the ground, not under it
+
+
+def test_terrain3d_value_drape_builds_a_surface_with_a_colour_bar():
+    from geoai import terrain, terrain3d
+    dem, res, tr = _synthetic_dem()
+    slope = terrain.slope_deg(dem, res)
+    fig, step, cell = terrain3d.figure(dem, res, tr, None, scalar=slope, scalar_label="Slope (°)",
+                                       colourscale="YlOrBr", max_side=420)
+    s = fig.data[0]
+    assert s.type == "surface" and s.colorbar.title.text == "Slope (°)"
+    assert np.shape(s.surfacecolor) == np.shape(s.z) == (300, 420) and step == 1
+    assert np.isnan(np.asarray(s.z)).any()                       # the hole stays a hole
+
+
+# ---------- structural geology ----------
+def test_resolve_settles_the_dip_direction_and_rejects_impossible_readings():
+    from geoai import structure as S
+    # strike 124, dip direction recorded as 45 (rounded): the plane dips 34, not 214
+    r = S.resolve([124, 124, 90, 187], [57, 57, 58, 48], [45, 214, 0, 180])
+    assert r.dipdir.tolist() == [34.0, 214.0, 0.0, 97.0]
+    assert r.strike.tolist() == [304.0, 124.0, 270.0, 7.0]          # right-hand rule: dip 90 deg clockwise
+    assert r.ok.tolist() == [True, True, True, False]               # 187/180 is 83 deg out: mis-recorded
+    assert r.offset.round(0).tolist() == [11.0, 0.0, 0.0, 83.0]
+    plain = S.resolve([124], [57])                                  # no dip direction: right-hand rule assumed
+    assert plain.dipdir[0] == 214.0 and bool(plain.assumed[0])
+
+
+def test_pole_and_plane_round_trip():
+    from geoai import structure as S
+    for strike, dip in [(0, 90), (45, 30), (124, 57), (350, 10), (215, 74), (270, 1)]:
+        s2, d2 = S.plane_of(S.pole_vectors([strike], [dip])[0])
+        assert s2 == pytest.approx(strike % 360, abs=1e-6) and d2 == pytest.approx(dip, abs=1e-6)
+
+
+def test_fisher_measures_how_tightly_a_set_clusters():
+    from geoai import structure as S
+    rng = np.random.default_rng(0)
+    tight = S.fisher(S.pole_vectors(120 + rng.normal(0, 3, 40), 60 + rng.normal(0, 3, 40)))
+    loose = S.fisher(S.pole_vectors(120 + rng.normal(0, 30, 40), 60 + rng.normal(0, 25, 40)))
+    assert tight["kappa"] > loose["kappa"] * 5 and tight["a95"] < loose["a95"]
+    assert tight["scatter"] < 6 and S.plane_of(tight["mean"])[0] == pytest.approx(120, abs=4)
+
+
+def test_find_sets_recovers_two_planted_sets_and_their_intersection():
+    from geoai import structure as S
+    rng = np.random.default_rng(1)
+    strike = np.r_[115 + rng.normal(0, 6, 14), 175 + rng.normal(0, 6, 9)]
+    dip = np.r_[65 + rng.normal(0, 5, 14), 80 + rng.normal(0, 5, 9)]
+    sets, labels = S.find_sets(strike, dip)
+    assert len(sets) == 2 and [s["n"] for s in sets] == [14, 9]     # biggest set first
+    assert sets[0]["strike"] == pytest.approx(115, abs=8) and sets[0]["dip"] == pytest.approx(65, abs=8)
+    assert sets[1]["strike"] == pytest.approx(175, abs=8)
+    assert (labels[:14] == 0).all() and (labels[14:] == 1).all()
+    one, _ = S.find_sets(115 + rng.normal(0, 5, 20), 65 + rng.normal(0, 5, 20))
+    assert len(one) == 1                                            # one population must not be split
+
+
+def test_intersection_of_two_planes_is_the_line_they_share():
+    from geoai import structure as S
+    def inter(a, b):
+        sets = [{"set": "A", "pole": S.pole_vectors([a[0]], [a[1]])[0]},
+                {"set": "B", "pole": S.pole_vectors([b[0]], [b[1]])[0]}]
+        return S.intersections(sets)[0]
+    v = inter((0, 90), (90, 90))                                    # two vertical planes meet in a vertical line
+    assert v["plunge"] == pytest.approx(90, abs=1e-6) and v["angle"] == pytest.approx(90, abs=1e-6)
+    h = inter((0, 90), (0, 0))                                      # vertical N-S against horizontal: level, N-S
+    assert h["plunge"] == pytest.approx(0, abs=1e-6) and h["trend"] % 180 == pytest.approx(0, abs=1e-6)
+
+
+def test_structure_narrative_reports_the_real_file():
+    from geoai import structure as S
+    df = pd.read_csv(os.path.join(os.path.dirname(__file__), "..", "sample_data",
+                                  "structure_measurements.csv"))
+    res = S.resolve(df.STRIKE, df.DIP, df.AZIMUTH)
+    ok = res.ok.to_numpy()
+    sets, labels = S.find_sets(res.strike[ok], res.dip[ok])
+    sp = S.spread(df.EASTINGS, df.NORTHINGS, df.STOP)
+    text = " ".join(S.narrative(res, S.classify_types(df.STRUCTURE), sets, labels,
+                                S.intersections(sets), sp))
+    assert "2 reading(s) were set aside" in text                    # the two impossible dip directions
+    assert "T18" in text                                            # the station far from the rest
+    assert "15 shear, 6 fault" in text and "Where the sets cross" in text
+    import matplotlib.pyplot as plt
+    plt.close(S.stereonet_figure(res, labels, sets, S.intersections(sets)))
+    plt.close(S.map_figure(df.EASTINGS, df.NORTHINGS, res, labels, None, sets, ids=df.STOP))

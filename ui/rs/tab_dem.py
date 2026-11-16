@@ -8,7 +8,6 @@ from geoai.imagery import dem as dem_mod
 from .common import get_scene, header, need_scene, show_fig
 from ui.state import fragment
 
-
 @fragment
 def render(aoi):
     st.caption("Copernicus DEM GLO-30 elevation. Relief shows ridges of resistant rock (quartz veins, BIF, "
@@ -55,4 +54,5 @@ def render(aoi):
                        lambda: export.geotiff_bytes({"elevation_m": dem, "hillshade": hs, "slope_deg": slope,
                                                      "aspect_deg": terrain.aspect_deg(dem, res_m)}, tr, epsg),
                        "dem_products.tif", "image/tiff", on_click="ignore", key="dem_tif")
-    st.caption(f"{dem_mod.ATTRIBUTION}. 30 m source resampled to the {res_m} m analysis grid.")
+    st.caption(f"{dem_mod.ATTRIBUTION}. 30 m source resampled to the {res_m:g} m analysis grid.")
+    st.caption("The **3-D terrain** tab draws this same landform in 3-D, with any of the maps draped over it.")

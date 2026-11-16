@@ -25,6 +25,8 @@ DEFAULTS = {
     "rs_lin_source": "Elevation (hillshade)", "rs_lin_pct": 90, "rs_lin_sigma": 2.0,
     "rs_lin_len": 300, "rs_lin_gap": 60, "rs_lin_radius": 500,
     "rs_dem_az": 315, "rs_dem_alt": 45, "rs_dem_z": 1.0, "rs_dem_contours": True,
+    "rs_d3_drape": "Shaded relief", "rs_d3_exag": 6.0, "rs_d3_detail": "High",
+    "rs_d3_az": 315, "rs_d3_alt": 45,
     "rs_p_w_clay": 1.0, "rs_p_w_iron": 0.7, "rs_p_w_lden": 0.8, "rs_p_w_lprox": 0.6, "rs_p_w_lith": 0.4,
     "rs_p_method": "Weighted sum", "rs_p_gamma": 0.8, "rs_p_veg": True, "rs_p_top": 5.0, "rs_p_minha": 0.5,
 }

@@ -359,3 +359,55 @@ def test_res2dinv_pole_dipole_and_index_format():
     df, meta = res2d.parse(index)                         # x = midpoint, a = 10, n = 3 -> electrodes 0,10 | 40,50
     assert "M" not in df and sorted(df.iloc[0][["Tx1", "Tx2", "Rx1", "Rx2"]]) == [0, 10, 40, 50]
     assert not res2d.looks_like("X,Y,TMI\n1,2,3\n4,5,6\n7,8,9")
+
+
+# ---------- soil gold geochemistry ----------
+def _soil():
+    from geoai import geochem, soilgold
+    df = pd.read_excel(os.path.join(os.path.dirname(__file__), "..", "sample_data", "soil_gold.xlsx"))
+    v, _ = geochem.clean_values(df.Au_ppm)
+    return soilgold, df.Easting.to_numpy(float), df.Northing.to_numpy(float), v
+
+
+def test_soil_gold_finds_the_two_populations_and_the_planted_shear():
+    from geoai import geochem
+    sg, x, y, v = _soil()
+    assert sg.guess_unit(v) == "ppm (= g/t)"
+    lay = sg.layout(x, y)
+    assert lay["spacing"] == pytest.approx(25, abs=1) and lay["duplicates"] == 0
+    pops = sg.populations(v)
+    assert pops["n_pop"] == 2 and pops["mean"][0] < pops["mean"][1]      # background below mineralised
+    assert pops["bic"][2] < pops["bic"][1]
+    limits = sg.thresholds(v, sg.METHODS[0], pops)
+    assert limits[0] < limits[1] < limits[2]
+    z = sg.zones(x, y, v, limits[1], lay["spacing"])
+    best = z.iloc[0]
+    assert best.samples >= 10 and best.elongation > 2
+    assert sg.angle_between(best.azimuth, 20.0) < 15                     # the shear was planted at 020
+    assert "north" in sg.open_edges(best, x, y, lay["spacing"])          # and it runs off the top of the grid
+
+
+def test_soil_gold_narrative_states_what_the_numbers_say():
+    from geoai import geochem
+    sg, x, y, v = _soil()
+    lay, pops = sg.layout(x, y), sg.populations(v)
+    limits = sg.thresholds(v, sg.METHODS[0], pops)
+    z = sg.zones(x, y, v, limits[1], lay["spacing"])
+    text = " ".join(sg.narrative(sg.summary(v, 1000.0), lay, pops, limits, z, x, y, 1000.0, "ppm (= g/t)",
+                                 sg.detection_floor(v)))
+    assert "Two populations" in text and "open" in text
+    assert f"{len(z)} zone(s)" in text
+    # a survey of one population must not be described as two
+    flat = np.exp(np.random.default_rng(0).normal(np.log(0.004), 0.3, 200))
+    one = sg.populations(flat)
+    assert one["n_pop"] == 1
+    t2 = " ".join(sg.narrative(sg.summary(flat, 1000.0), sg.layout(x[:200], y[:200]), one,
+                               sg.thresholds(flat, sg.METHODS[0], one), pd.DataFrame(), x[:200], y[:200],
+                               1000.0, "ppm (= g/t)"))
+    assert "One population" in t2 and "No sample reaches" in t2
+
+
+def test_soil_gold_zones_group_touching_samples_only():
+    sg, x, y, v = _soil()
+    far = sg.zones(np.array([0., 10., 500.]), np.array([0., 0., 0.]), np.array([1., 1., 1.]), 0.5, 10.)
+    assert len(far) == 2 and sorted(far.samples) == [1, 2]               # two near, one far away

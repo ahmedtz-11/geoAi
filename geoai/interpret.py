@@ -247,9 +247,12 @@ def build_evidence(datasets, results, transform, shape, epsg, favourable_liths=N
     for i, ds in enumerate(datasets.get("geochem", [])):
         r = results["geochem"][i]
         if "index" in r:
+            pf = ds.get("pathfinders") or []
             ev["Gold geochemistry index"] = dict(
                 raw=points_to_grid(ds["x"], ds["y"], r["index"], transform, shape), default_weight=1.0,
-                favourable="High", source="Geochemistry", info="Au and correlated pathfinders (log z-scores).")
+                favourable="High", source="Geochemistry",
+                info=f"Gold assays from {ds['name']} (log z-scores)."
+                     + (f" Pathfinders weighted by their correlation with Au: {', '.join(pf)}." if pf else ""))
     return ev
 
 

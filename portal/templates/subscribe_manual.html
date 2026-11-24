@@ -1,0 +1,21 @@
+{% extends "base.html" %} {% block title %}Subscribe · {{ BRAND }}{% endblock %}
+{% block body %}
+<h1>{{ plan.name }} — {{ plan.price_label }}</h1>
+<div class="card">
+  <p>
+    Send your payment using the details the administrator gave you, then press
+    the button below. Your access opens as soon as the payment is confirmed, and
+    you will see the new expiry date on your account page.
+  </p>
+  <p class="small muted">
+    Questions about payment:
+    <a href="mailto:{{ SUPPORT_EMAIL }}">{{ SUPPORT_EMAIL }}</a>
+  </p>
+  <form method="post">
+    <button class="btn" type="submit">
+      I have paid — tell the administrator
+    </button>
+    <a class="btn sec" href="{{ url_for('billing.pricing') }}">Back to plans</a>
+  </form>
+</div>
+{% endblock %}

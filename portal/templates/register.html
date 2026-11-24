@@ -1,0 +1,72 @@
+{% extends "base.html" %} {% block title %}Create an account · {{ BRAND }}{%
+endblock %} {% block body %}
+<h1>Create an account</h1>
+<div class="card" style="max-width: 520px">
+  <form method="post">
+    <div class="grid g2" style="gap: 0.2rem 1rem">
+      <div>
+        <label for="name">Your name</label>
+        <input
+          id="name"
+          name="name"
+          value="{{ form.get('name','') }}"
+          autocomplete="name"
+        />
+      </div>
+      <div>
+        <label for="organisation">Organisation</label>
+        <input
+          id="organisation"
+          name="organisation"
+          value="{{ form.get('organisation','') }}"
+        />
+      </div>
+    </div>
+    <label for="email">Email</label>
+    <input
+      id="email"
+      name="email"
+      type="email"
+      value="{{ form.get('email','') }}"
+      required
+      autocomplete="username"
+    />
+    <label for="phone">Phone (for payment confirmation)</label>
+    <input
+      id="phone"
+      name="phone"
+      value="{{ form.get('phone','') }}"
+      autocomplete="tel"
+    />
+    <div class="grid g2" style="gap: 0.2rem 1rem">
+      <div>
+        <label for="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autocomplete="new-password"
+        />
+      </div>
+      <div>
+        <label for="password2">Repeat password</label>
+        <input
+          id="password2"
+          name="password2"
+          type="password"
+          required
+          autocomplete="new-password"
+        />
+      </div>
+    </div>
+    <p class="small muted">
+      At least 10 characters, with letters and something that is not a letter.
+    </p>
+    <p><button class="btn" type="submit">Create account</button></p>
+  </form>
+  <p class="small muted">
+    Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a>.
+  </p>
+</div>
+{% endblock %}

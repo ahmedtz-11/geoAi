@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Users · {{ BRAND }}{% endblock %}
+{% block wide %}wide{% endblock %}
+{% block body %}
+<h1>Users</h1>{% include "admin/_nav.html" %}
+<div class="card">
+<form method="get" style="display:flex;gap:.6rem;align-items:end;flex-wrap:wrap">
+  <div style="flex:1;min-width:220px"><label for="q">Search name, email or organisation</label>
+    <input id="q" name="q" value="{{ q }}"></div>
+  <div><label for="show">Show</label><select id="show" name="show">
+    {% for v, t in [('all','Everyone'),('paid','Paying'),('free','Free only'),('suspended','Suspended')] %}
+    <option value="{{ v }}" {{ 'selected' if show==v }}>{{ t }}</option>{% endfor %}</select></div>
+  <button class="btn sec" type="submit">Filter</button>
+</form>
+</div>
+<div class="card">
+<table>
+<tr><th>Email</th><th>Name</th><th>Organisation</th><th>Plan</th><th>Ends</th><th>Joined</th><th></th></tr>
+{% for u in people %}
+<tr>
+  <td><a href="{{ url_for('admin.user_detail', uid=u.id) }}">{{ u.email }}</a>
+      {% if u.is_admin %}<span class="tag warn">admin</span>{% endif %}
+      {% if not u.is_active_account %}<span class="tag err">suspended</span>{% endif %}</td>
+  <td>{{ u.name }}</td><td class="small">{{ u.organisation }}</td>
+  <td>{% if u.subscription %}<span class="tag ok">{{ u.plan_name }}</span>
+      {% else %}<span class="tag no">{{ u.plan_name }}</span>{% endif %}</td>
+  <td class="small">{% if u.expires_at %}{{ u.expires_at.strftime('%d %b %Y') }}
+      <span class="muted">({{ u.days_left }}d)</span>{% else %}—{% endif %}</td>
+  <td class="small muted">{{ u.created_at.strftime('%d %b %Y') }}</td>
+  <td><a class="btn sm sec" href="{{ url_for('admin.user_detail', uid=u.id) }}">Manage</a></td>
+</tr>
+{% else %}<tr><td colspan="7" class="muted">Nobody matches that.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

@@ -356,3 +356,83 @@ def test_structure_narrative_reports_the_real_file():
     import matplotlib.pyplot as plt
     plt.close(S.stereonet_figure(res, labels, sets, S.intersections(sets)))
     plt.close(S.map_figure(df.EASTINGS, df.NORTHINGS, res, labels, None, sets, ids=df.STOP))
+
+
+# ---------- interpolation methods ----------
+def _planted_field(n=160, seed=0):
+    """Samples of a known smooth surface, so every method can be checked against the true values."""
+    rng = np.random.default_rng(seed)
+    x = rng.uniform(0, 500, n)
+    y = rng.uniform(0, 500, n)
+
+    def truth(a, b):
+        return 2.0 + np.sin(a / 90.0) * np.cos(b / 110.0) + 0.0015 * a
+    return x, y, truth(x, y), truth
+
+
+def test_every_interpolation_method_recovers_a_known_surface():
+    from geoai import interpolate as I
+    x, y, v, truth = _planted_field()
+    for method in I.METHODS:
+        g = I.grid(x, y, v, method=method, cell=12.0)
+        ok = np.isfinite(g["z"])
+        assert ok.sum() > 200, method
+        rows, cols = np.nonzero(ok)
+        tr = g["transform"]
+        gx = tr.c + (cols + 0.5) * tr.a
+        gy = tr.f + (rows + 0.5) * tr.e
+        err = np.abs(g["z"][ok] - truth(gx, gy))
+        assert np.median(err) < 0.1, (method, float(np.median(err)))        # true range is about 2 units
+        assert g["cell"] == 12.0 and tr.a == 12.0
+
+
+def test_grid_interval_is_the_users_choice():
+    from geoai import interpolate as I
+    x, y, v, _ = _planted_field()
+    coarse = I.grid(x, y, v, method="Inverse distance (IDW)", cell=50.0)
+    fine = I.grid(x, y, v, method="Inverse distance (IDW)", cell=10.0)
+    assert coarse["transform"].a == 50.0 and fine["transform"].a == 10.0
+    assert fine["z"].size > 15 * coarse["z"].size      # 5x finer interval, ~25x the cells
+    auto = I.grid(x, y, v, method="Inverse distance (IDW)")
+    assert auto["cell"] == pytest.approx(I.suggest_cell(x, y))
+
+
+def test_idw_and_natural_neighbour_never_leave_the_data_range():
+    from geoai import interpolate as I
+    x, y, v, _ = _planted_field()
+    lo, hi = v.min(), v.max()
+    for method in ("Inverse distance (IDW)", "Natural neighbour"):
+        z = I.grid(x, y, v, method=method, cell=12.0)["z"]
+        assert np.nanmin(z) >= lo - 1e-9 and np.nanmax(z) <= hi + 1e-9, method
+
+
+def test_kriging_fits_a_variogram_and_honours_the_samples():
+    from geoai import interpolate as I
+    rng = np.random.default_rng(2)
+    x = rng.uniform(0, 600, 120)
+    y = rng.uniform(0, 600, 120)
+    v = 3 + np.sin(x / 80.0) + np.cos(y / 95.0)
+    lag, semi, cnt = I.experimental_variogram(x, y, v)
+    assert len(lag) >= 8 and semi[-1] > semi[0]                 # semivariance grows with separation
+    vg = I.fit_variogram(lag, semi, cnt, "Spherical")
+    assert vg["fit"] > 0.8 and 0 < vg["range"] < 3 * lag[-1] and vg["nugget"] < 0.3 * vg["sill"]
+    est, err = I.ordinary_kriging(x, y, v, x.reshape(1, -1), y.reshape(1, -1), vg)
+    assert np.allclose(est.ravel(), v, atol=0.02)               # exact at the samples with a small nugget
+    assert np.allclose(err.ravel(), 0, atol=0.05)               # and no uncertainty there
+    g = I.grid(x, y, v, method="Ordinary kriging", cell=20.0)
+    assert g["variogram"] is not None and g["error"] is not None
+    assert np.nanmin(g["error"]) < np.nanmax(g["error"])
+    auto = I.grid(x, y, v, method="Ordinary kriging", cell=20.0, variogram="Auto (best fit)")
+    assert auto["variogram"]["fit"] >= vg["fit"] - 1e-9         # auto is never worse than one fixed model
+    import matplotlib.pyplot as plt
+    plt.close(I.variogram_figure(vg))
+
+
+def test_assay_units_are_ppm_or_percent_only():
+    from geoai import soilgold as sg
+    assert list(sg.UNITS) == ["ppm (= g/t)", "% (= 10,000 ppm)"]
+    assert sg.UNITS["ppm (= g/t)"] == 1000.0 and sg.UNITS["% (= 10,000 ppm)"] == 1e7
+    assert sg.guess_unit([0.05, 0.07, 1.4]) == "ppm (= g/t)"
+    # 1 ppm expressed either way must describe the same gold
+    assert sg.summary([1.0], sg.UNITS["ppm (= g/t)"])["max_ppb"] == \
+        sg.summary([0.0001], sg.UNITS["% (= 10,000 ppm)"])["max_ppb"] == 1000.0

@@ -17,7 +17,8 @@ from scipy.stats import norm
 
 # ppb of gold in residual soil: rules of thumb used to put a survey in context, not thresholds for it
 GUIDE = [(10, "typical background"), (30, "weakly anomalous"), (100, "anomalous"), (1000, "strongly anomalous")]
-UNITS = {"ppm (= g/t)": 1000.0, "ppb (= µg/t)": 1.0, "g/t (= ppm)": 1000.0}
+# how many ppb one unit is: the guide values above are in ppb, so everything converts through it
+UNITS = {"ppm (= g/t)": 1000.0, "% (= 10,000 ppm)": 1e7}
 CLASSES = ["Background", "Weak anomaly", "Anomalous", "Strongly anomalous"]
 CLASS_COLORS = ["#c9c9c9", "#f2c14e", "#e4572e", "#7b0d1e"]
 # the first asks the data where background stops; the rest are the usual fixed rules
@@ -26,12 +27,13 @@ METHODS = ["Two populations (where background stops)", "Mean + \u03c3 on log val
 
 
 def guess_unit(values):
-    """ppm or ppb, from the size of the numbers. Soil gold is a few ppb to a few thousand ppb."""
+    """Which unit the assays are most likely in. Gold in soil is almost always reported in ppm (g/t);
+    per cent only appears on ore-grade material, where the numbers are far smaller for the same gold."""
     v = np.asarray(values, float)
     v = v[np.isfinite(v) & (v > 0)]
     if not v.size:
         return list(UNITS)[0]
-    return "ppb (= µg/t)" if np.median(v) > 5 else "ppm (= g/t)"
+    return "% (= 10,000 ppm)" if np.median(v) < 0.001 else "ppm (= g/t)"
 
 
 def layout(x, y):

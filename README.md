@@ -20,7 +20,7 @@ An internet connection is needed for satellite imagery (Section 1).
 | **2 · Magnetic** | One magnetic survey file: .dat (incl. Geosoft XYZ), .csv, .txt, .xls/.xlsx, GeoTIFF or a map picture | Spike removal, minimum-curvature grid (cell = ¼ of the survey line spacing) clipped to the survey outline, two image types to switch between: **Normal** (original gridding and colours) and **Filled** (Oasis montaj style: Geosoft rainbow, equal-area stretch); 12 maps: TMI, RTP/RTE (IGRF field direction, low-latitude stabilised), 1VD, 2VD, analytic signal, tilt derivative, THDR, lineaments (+ strike rose), upward continuation, SPI depth, Euler 3D, magnetic target map; ZIP of all maps |
 | **3 · IP** | One .csv / .txt file per survey line (station, n-level or depth, chargeability / resistivity) | One pseudosection image per line with the anomaly outlined, its position and depth range |
 | **4 · Geology** | Structural measurements (CSV / Excel) and / or a QDS geological map sheet (PNG, JPG, GeoTIFF); either alone is enough | Dip directions resolved and bad readings flagged, structural sets with mean orientation and Fisher statistics, the line where sets cross (ore-shoot plunge), shortening direction, stereonet, strike rose, structure map over the sheet, written interpretation |
-| **5 · Geochemistry** | Soil samples with a gold assay (CSV or Excel): position, sample ID, Au | Where background stops (two-population fit), anomaly classes, ranked anomaly zones with trend, extent and whether they are open, log-probability plot, interpolated map, written interpretation and follow-up advice |
+| **5 · Geochemistry** | Soil samples with a gold assay (CSV or Excel): position, sample ID, Au in ppm or % | Where background stops (two-population fit), anomaly classes, ranked anomaly zones with trend, extent and whether they are open, log-probability plot, interpolated map (natural neighbour, IDW, kriging with its variogram and error map, minimum curvature or linear, at a grid interval you choose), written interpretation and follow-up advice |
 | **6 · Integrated gold prediction** | Whatever was submitted in sections 2–5, plus Section 1 results and/or uploaded remote sensing GeoTIFFs | Weighted evidence (knowledge-driven) and/or Random Forest on gold samples; prospectivity map; ranked targets with location, estimated depth and trend; HTML report |
 
 ## 3-D terrain (Section 1, Step 3 tab)
@@ -125,6 +125,31 @@ group on top of background, and the line between them becomes the anomaly thresh
 (mean + σ on logs, percentiles, median + MAD) are still selectable. A log-probability plot shows the same
 thing by eye: one population is a straight line of points, two make a step.
 
+**Assay units** are ppm (the same as g/t) or per cent, and you pick which. The choice decides every
+threshold on the page, so it is worth checking against the lab certificate; results are reported in your
+unit and in ppb.
+
+**Interpolating between samples** offers five methods, because they disagree in ways that matter:
+
+| Method | What it does | Watch for |
+|---|---|---|
+| Natural neighbour (default) | Each sample gets the share of ground a new sample at that spot would steal from it (Sibson, 1981) | Stops at the edge of the sampled ground |
+| Inverse distance (IDW) | Weighted average of the nearest samples, 1/distance^p | A bull's-eye at every sample; choose the power |
+| Ordinary kriging | Fits a variogram, then weights samples to minimise the estimation error | The only one that also maps its own uncertainty; smooths towards the local mean wherever there is a nugget |
+| Minimum curvature | Smoothest surface through every reading | Can overshoot beyond the data range in gaps |
+| Linear triangulation | Flat triangles between samples | Visible facets |
+
+Kriging reports the fitted variogram (model, range, nugget-to-sill ratio and fit) with its plot, and a
+standard-error map. The **range** is roughly the size of the anomalies and a good guide to infill spacing;
+the **nugget ratio** is the share of variation already present between samples a metre apart, and above
+about 50 % the page says so, because the map is then mostly noise. The variogram model can be fixed
+(spherical, exponential, Gaussian) or left on Auto, which fits all three and keeps the best.
+
+The **grid interval** is yours to set. Left automatic it is about a third of the sample spacing; a finer
+interval than that only smooths the picture, it adds no real detail. Assays are interpolated in log space
+by default, because gold is log-normal and one high sample would otherwise dominate the whole map. The
+result downloads as a PNG or a GeoTIFF.
+
 **Anomaly zones.** Anomalous samples within 1.8 sample spacings are joined into one zone, so a zone is a run
 of neighbouring anomalous samples rather than a ring drawn around each one. Each zone is reported with its
 peak and mean assay, peak coordinates, length, trend, and whether it runs off the edge of the survey and is
@@ -137,10 +162,58 @@ residual soil, the detection limit if the low end piles up on one value, the pop
 trend and what to do next. Everything is stored for **6 · Integrated gold prediction**, which uses the log
 z-scores of the assays as its gold geochemistry evidence layer.
 
+## Accounts, subscriptions and hosting
+
+The science app and the business around it are two programs that share a machine, because Streamlit
+cannot do the second one: it has no way to serve a payment webhook or an admin dashboard.
+
+```
+            ┌─────────── nginx (443, TLS) ───────────┐
+browser ───▶│  /       → portal   (Flask, :8000)     │   accounts, plans, payments, admin
+            │  /app/   → gate, then Streamlit :8501  │   the six sections and Pit mapping
+            └────────────────────────────────────────┘
+```
+
+**The gate.** nginx asks the portal, on every request to `/app`, whether this browser's session may pass.
+The answer carries a short-lived signed token naming the subscriber and what their plan opens; nginx
+overwrites any header the browser sent under that name, and `ui/gate.py` refuses a token it cannot
+verify. Both services listen on 127.0.0.1, so nginx is the only way in.
+
+`GEOAI_SECRET_KEY` signs the token, and **setting it is what turns the gate on**: with no secret,
+`streamlit run app.py` works exactly as before for local work, and the lock arrives with the deployment
+rather than having to be remembered.
+
+**A plan is data, not code** (`portal/models.py`). Which sections it opens, whether downloads are
+included, the monthly upload cap and the seat count are columns in a table, so the client adds a tier or
+changes what one includes from the admin dashboard without anyone touching Python.
+
+**The admin dashboard** at `/admin` lists accounts, who is paying, revenue this month, and subscriptions
+ending within seven days. An administrator activates a subscription by recording what was paid (amount,
+method, receipt reference); re-activating the same plan adds days rather than stacking. Suspending,
+cancelling and granting admin rights are there too, and every one of those actions is written to an
+audit log with who did it.
+
+**Payments** are manual to begin with: someone pays however the client prefers and an administrator
+records it. `portal/billing.py` has the two functions a gateway needs and the webhook route already
+wired, with signature checking failing closed until a real provider is connected. For Tanzania the
+candidates are Flutterwave, Pesapal, DPO Pay, Selcom or M-Pesa direct; Stripe does not onboard Tanzanian
+merchants. Worth knowing before choosing: mobile money generally cannot keep a card on file and charge
+it silently each month, so renewal is normally a request the subscriber approves, which is why the model
+here is expiry-and-renew rather than a silent auto-charge.
+
+Deployment onto a plain Ubuntu VPS, with the nginx config and both systemd units, is in
+[`deploy/README.md`](deploy/README.md).
+
 ## Project layout
 
 ```
-app.py                     entry point + navigation
+app.py                     entry point + navigation (filters the pages a plan opens)
+wsgi.py                    what gunicorn runs; `flask --app wsgi admin-user` makes the first admin
+portal/                    accounts, plans, subscriptions, payments, admin dashboard (Flask)
+  models.py  config.py  auth.py  public.py  billing.py  admin.py  gate.py
+  templates/  static/
+deploy/                    nginx config, systemd units, env example, VPS guide
+ui/gate.py                 the Streamlit side of the gate: who is signed in, what their plan opens
 views/
   home.py                  landing page
   remote_sensing.py        Section 1 page (steps 1-2, then the Step-3 tabs)
@@ -183,6 +256,7 @@ geoai/                     reusable logic (no Streamlit inside)
   ipinv.py                 IP inversion: half-space sensitivities, smoothness-constrained solve, Res2DInv-style figure
   geochem.py               lab value cleaning, log thresholds, classes, correlation, gold index
   soilgold.py              soil gold: survey layout, two-population fit, anomaly zones, written interpretation
+  interpolate.py           natural neighbour, IDW, ordinary kriging (+ variogram), on a chosen grid interval
   geology.py               lithology / structural measurements, rose, stereonet poles
   structure.py             structural sets, Fisher statistics, set intersections, structural interpretation
   imagegrid.py             map picture colours -> relative values

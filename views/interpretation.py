@@ -9,6 +9,7 @@ import streamlit as st
 from geoai import indices, interpret
 from ui.interp import tab_prediction, tab_remote, tab_summary, upload
 from ui.interp.common import new_run_id, ss
+from ui import gate
 
 PAGES = {"magnetic": ("2 · Magnetic", "views/magnetic.py"),
          "ip": ("3 · IP", "views/ip.py"),
@@ -46,7 +47,7 @@ with cols[0], st.container(border=True):
                              key="use_section1")
     else:
         st.caption("No Section 1 scene loaded in this session.")
-    st.page_link("views/remote_sensing.py", label="Open remote sensing", icon="🛰️")
+    gate.page_link("views/remote_sensing.py", label="Open remote sensing", icon="🛰️")
 for col, (slot, (label, path)) in zip(cols[1:], PAGES.items()):
     with col, st.container(border=True):
         st.markdown(f"**{label}**")
@@ -56,7 +57,7 @@ for col, (slot, (label, path)) in zip(cols[1:], PAGES.items()):
             st.caption(", ".join(s["name"] for s in e["specs"]))
         else:
             st.caption("Nothing submitted yet.")
-        st.page_link(path, label="Open page", icon="➡️")
+        gate.page_link(path, label="Open page", icon="➡️")
 
 rs_specs = []
 if st.toggle("Add other remote sensing layers (GeoTIFF, CSV points or a map picture)", key="s5_add_rs"):

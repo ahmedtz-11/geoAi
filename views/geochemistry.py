@@ -10,8 +10,9 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from geoai import coords, export, geochem, geophysics, interpret, plots, readers, soilgold
+from geoai import coords, export, geochem, interpolate, interpret, plots, readers, soilgold
 from ui.interp.common import clear_widgets, new_run_id, ss, to_lonlat
+from ui import gate
 
 ACCEPT = ["csv", "xls", "xlsx"]
 PREDICTION_PAGE = "views/interpretation.py"
@@ -89,9 +90,11 @@ if f is not None:
                     vals, _ = geochem.clean_values(df[aucol])
                     unit = e2.selectbox("Assay unit", list(soilgold.UNITS),
                                         list(soilgold.UNITS).index(soilgold.guess_unit(vals)), key="gc_unit",
-                                        help="Guessed from the size of the numbers. Soil gold runs from a few "
-                                             "ppb to a few thousand ppb, so 0.05 is ppm and 50 is ppb. "
-                                             "Everything below is reported in both.")
+                                        help="Check this against your lab certificate: it decides every "
+                                             "threshold and every number below. Soil gold is nearly always "
+                                             "reported in ppm (the same thing as g/t); per cent is for "
+                                             "ore-grade material, where 1 % is 10,000 ppm. Results are "
+                                             "given in your unit and in ppb.")
                     idopts = ["(row number)"] + [k for k in cols if k not in (xcol, ycol, aucol)]
                     guess = next((k for k in idopts[1:] if any(w in str(k).lower() for w in
                                                                ("sample", "id", "no", "point"))), None)
@@ -231,18 +234,100 @@ with tabs[2]:
     st.caption("On the right, one population plots as a single straight line of points. A step in the points "
                "where the two fitted lines cross means a mineralised population sits on top of background.")
 with tabs[3]:
+    i1, i2, i3 = st.columns([2, 1, 1])
+    method = i1.selectbox("Interpolation method", interpolate.METHODS, key="gc_interp",
+                          help="**Natural neighbour** takes from each sample the share of ground a new "
+                               "sample at that spot would steal from it: no bull's-eyes, and it never "
+                               "invents values outside your data. **Inverse distance** is the simple "
+                               "weighted average, predictable but with a bull's-eye at every sample. "
+                               "**Ordinary kriging** measures how fast the assays decorrelate with "
+                               "distance and weights the samples to minimise the error; it is the only "
+                               "one that also reports its own uncertainty. **Minimum curvature** gives the "
+                               "smoothest contours but can overshoot in gaps.")
+    auto_cell = i2.checkbox("Automatic grid interval", True, key="gc_auto_cell",
+                            help="A third of your sample spacing. Turn it off to set the interval yourself.")
+    sug = interpolate.suggest_cell(x, y)
+    cell = None
+    if auto_cell:
+        i2.caption(f"{sug:,.1f} m")
+    else:
+        cell = i2.number_input("Grid interval (m)", 0.5, 2000.0, float(round(sug, 1)), step=0.5,
+                               key="gc_cell",
+                               help="The spacing of the grid the map is drawn on. Finer than about a third "
+                                    "of the sample spacing adds no real detail, only a smoother picture.")
+    vmodel = i3.selectbox("Variogram model", interpolate.VARIOGRAMS, key="gc_vmodel",
+                          disabled=method != interpolate.METHODS[2],
+                          help="Only used by kriging. Auto fits all three and keeps the best.")
+    power = i3.slider("Distance power", 1.0, 4.0, 2.0, 0.5, key="gc_power",
+                      disabled=method != interpolate.METHODS[1],
+                      help="Only used by inverse distance. Higher gives nearby samples more say and makes "
+                           "the map blockier.")
+    log_scale = st.checkbox("Interpolate the logarithm of the assays", True, key="gc_loggrid",
+                            help="Gold is log-normal, so interpolating the logs stops a single high sample "
+                                 "dominating the whole map. The colour bar stays in your own units.")
+
+    @st.cache_data(show_spinner="Interpolating…", max_entries=12)
+    def _interp(key, x, y, v, method, cell, power, vmodel, log_scale):
+        vals = np.log10(np.where(v > 0, v, np.nan)) if log_scale else np.asarray(v, float)
+        return interpolate.grid(x, y, vals, method=method, cell=cell, power=power, variogram=vmodel)
+
     try:
-        lv = np.log10(np.where(v > 0, v, np.nan))
-        g = geophysics.grid_points(x, y, lv)
-        fig = plots.grid_figure(g["z"], g["transform"], f"Gold in soil, interpolated (log10 {u})", "YlOrRd",
-                                f"log10 {u}", overlay_pts=(x, y))
+        g = _interp(run["id"], x, y, v, method, cell, power, vmodel, log_scale)
+        shown = 10 ** g["z"] if log_scale else g["z"]
+        fig = plots.grid_figure(shown, g["transform"], f"Gold in soil · {method} · {g['cell']:,.1f} m grid",
+                                "YlOrRd", u, overlay_pts=(x, y))
         st.pyplot(fig)
+        png = export.fig_to_png(fig)
         plt.close(fig)
-        st.caption("Minimum-curvature surface through the log of the assays, blanked away from the samples. "
-                   "What happens between samples is a guess: trust the sample points, not the colours "
-                   "between them.")
+        d1, d2 = st.columns([1, 1])
+        d1.download_button("Interpolated map (PNG)", png, "soil_gold_interpolated.png", "image/png",
+                           on_click="ignore", key="gc_png_interp")
+        d2.download_button("Interpolated grid (GeoTIFF)",
+                           lambda: export.geotiff_bytes({"Au": shown.astype("float32")}, g["transform"],
+                                                        run["epsg"]),
+                           "soil_gold_interpolated.tif", "image/tiff", on_click="ignore", key="gc_tif")
+        st.caption(f"{method} on a {g['cell']:,.1f} m grid"
+                   + (" through the logs of the assays" if log_scale else "")
+                   + f", blanked more than {g['reach']:,.0f} m from a sample and clipped to the sampled "
+                     "ground. What happens between samples is an estimate: trust the sample points, not "
+                     "the colours between them.")
+        if g["variogram"] is not None:
+            vg = g["variogram"]
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Variogram model", vg["model"])
+            m2.metric("Range", f"{vg['range']:,.0f} m",
+                      help="Beyond this distance two samples tell you nothing about each other. It is "
+                           "roughly the size of the anomalies, and a good guide to infill spacing.")
+            m3.metric("Nugget / sill", f"{vg['nugget_ratio']:.0%}",
+                      help="The share of the variation that is already there between samples a metre "
+                           "apart: sampling and assay noise, and the nugget effect of coarse gold. Above "
+                           "about 50 % the map is mostly noise.")
+            m4.metric("Fit", f"{vg['fit']:.2f}")
+            v1, v2 = st.columns(2)
+            with v1:
+                fig = interpolate.variogram_figure(vg, title="Fitted variogram")
+                st.pyplot(fig)
+                plt.close(fig)
+            with v2:
+                err = g["error"]
+                fig = plots.grid_figure(err, g["transform"], "Kriging standard error", "viridis_r",
+                                        "log10 error" if log_scale else u, overlay_pts=(x, y))
+                st.pyplot(fig)
+                plt.close(fig)
+            st.caption("Kriging is the only method here that reports its own uncertainty. The error map is "
+                       "lowest at the samples and rises between them; it depends on where you sampled, not "
+                       "on what the assays were, so it shows where another sample would buy you the most.")
+            if vg["nugget_ratio"] > 0.5:
+                st.warning(f"The nugget is {vg['nugget_ratio']:.0%} of the sill, so most of the variation "
+                           "between your samples is noise rather than structure. Kriging will smooth this "
+                           "map heavily, and it is worth checking field duplicates before trusting small "
+                           "features anywhere on this page.")
+        if method == interpolate.METHODS[2]:
+            st.caption("Kriging smooths towards the local mean wherever there is a nugget, so its peaks are "
+                       "lower than the sample values. That is correct, not a fault: compare it with natural "
+                       "neighbour to see how much of a peak is one sample.")
     except Exception as e:
-        st.info(f"The sample positions are too close to a line to interpolate: {e}")
+        st.info(f"Could not interpolate these samples: {e}")
 with tabs[4]:
     rows = [("Samples", f"{stats['n']:,}"), ("Area covered", f"{lay['area_ha']:,.1f} ha"),
             ("Sample spacing", f"{lay['spacing']:,.0f} m"), ("Duplicate positions", f"{lay['duplicates']}"),
@@ -272,5 +357,5 @@ with tabs[5]:
 entry["analysis"] = {"layout": lay, "stats": stats, "pops": pops, "limits": limits, "zones": z,
                      "floor": A["floor"], "method": method, "unit": unit_name, "narrative": narrative}
 st.divider()
-st.page_link(PREDICTION_PAGE, icon="➡️",
+gate.page_link(PREDICTION_PAGE, icon="➡️",
              label="Next: combine with your other data in **6 · Integrated gold prediction**")

@@ -1,0 +1,20 @@
+[Unit]
+Description=GeoAI portal (Flask)
+After=network.target
+
+[Service]
+User=geoai
+Group=geoai
+WorkingDirectory=/srv/geoai
+EnvironmentFile=/srv/geoai/.env
+ExecStart=/srv/geoai/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:8000 --timeout 120 wsgi:app
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/srv/geoai/data
+
+[Install]
+WantedBy=multi-user.target

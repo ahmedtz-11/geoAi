@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ u.email }} · {{ BRAND }}{% endblock %}
+{% block wide %}wide{% endblock %}
+{% block body %}
+<h1>{{ u.email }}</h1>{% include "admin/_nav.html" %}
+<div class="grid g2">
+  <div class="card">
+    <h2 style="margin-top:0">Give or extend a subscription</h2>
+    <form method="post" action="{{ url_for('admin.activate_user', uid=u.id) }}">
+      <div class="grid g2" style="gap:.2rem 1rem">
+        <div><label for="plan">Plan</label><select id="plan" name="plan">
+          {% for p in plans %}<option value="{{ p.code }}">{{ p.name }} — {{ p.price_label }}</option>{% endfor %}
+        </select></div>
+        <div><label for="days">Days</label><input id="days" name="days" type="number" min="1" placeholder="plan default"></div>
+        <div><label for="amount">Amount received</label><input id="amount" name="amount" type="number" step="any" placeholder="plan price"></div>
+        <div><label for="method">How they paid</label><select id="method" name="method">
+          {% for k, v in providers.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      </div>
+      <label for="reference">Receipt or transaction reference</label><input id="reference" name="reference">
+      <label for="note">Note</label><input id="note" name="note">
+      <p><button class="btn" type="submit">Activate</button></p>
+    </form>
+    <p class="small muted">Activating the same plan again adds days to the end instead of starting over.</p>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Now</h2>
+    {% set s = u.subscription %}
+    <p><b>{{ u.plan_name }}</b>
+      {% if s %}<span class="tag ok">active</span> until {{ s.ends_at.strftime('%d %b %Y') }}
+        ({{ s.days_left }} days){% else %}<span class="tag no">no paid plan</span>{% endif %}</p>
+    <p class="small">Sections: {% for k in u.allowed_sections() %}<span class="tag ok">{{ k.replace('-',' ') }}</span> {% endfor %}</p>
+    <p class="small">Downloads: {{ 'yes' if u.may_download() else 'no' }} ·
+       Uploads this month: {{ used }}{% if limit %} of {{ limit }}{% endif %}</p>
+    <p class="small muted">Joined {{ u.created_at.strftime('%d %b %Y') }} ·
+       last signed in {{ u.last_login.strftime('%d %b %Y %H:%M') if u.last_login else 'never' }}
+       {% if u.phone %}· {{ u.phone }}{% endif %}</p>
+    <form method="post" action="{{ url_for('admin.cancel', uid=u.id) }}" style="display:inline">
+      <button class="btn sm danger" type="submit" {{ 'disabled' if not s }}>Cancel subscription</button></form>
+    <form method="post" action="{{ url_for('admin.suspend', uid=u.id) }}" style="display:inline">
+      <button class="btn sm sec" type="submit">{{ 'Restore account' if not u.is_active_account else 'Suspend account' }}</button></form>
+    <form method="post" action="{{ url_for('admin.toggle_admin', uid=u.id) }}" style="display:inline">
+      <button class="btn sm sec" type="submit">{{ 'Remove admin' if u.is_admin else 'Make admin' }}</button></form>
+  </div>
+</div>
+<div class="grid g2">
+  <div class="card"><h2 style="margin-top:0">Subscription history</h2>
+    <table><tr><th>Plan</th><th>From</th><th>To</th><th>Status</th><th>By</th></tr>
+    {% for s in u.subscriptions %}<tr><td>{{ s.plan.name }}</td>
+      <td class="small">{{ s.started_at.strftime('%d %b %Y') }}</td>
+      <td class="small">{{ s.ends_at.strftime('%d %b %Y') }}</td>
+      <td><span class="tag {{ 'ok' if s.is_live else 'no' }}">{{ 'live' if s.is_live else s.status }}</span></td>
+      <td class="small muted">{{ s.created_by }}</td></tr>
+    {% else %}<tr><td colspan="5" class="muted small">None yet.</td></tr>{% endfor %}</table>
+  </div>
+  <div class="card"><h2 style="margin-top:0">Recent activity</h2>
+    <table><tr><th>When</th><th>What</th></tr>
+    {% for e in events %}<tr><td class="small muted">{{ e.at.strftime('%d %b %H:%M') }}</td>
+      <td class="small">{{ e.kind }}{% if e.section %} · {{ e.section }}{% endif %} <span class="muted">{{ e.detail }}</span></td></tr>
+    {% else %}<tr><td colspan="2" class="muted small">Nothing yet.</td></tr>{% endfor %}</table>
+  </div>
+</div>
+{% endblock %}

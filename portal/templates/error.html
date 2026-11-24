@@ -1,0 +1,7 @@
+{% extends "base.html" %} {% block body %}
+<h1>{{ code }}</h1>
+<div class="card">
+  <p>{{ message }}</p>
+  <a class="btn" href="{{ url_for('public.index') }}">Back to the start</a>
+</div>
+{% endblock %}

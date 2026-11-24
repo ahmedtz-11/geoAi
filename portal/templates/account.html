@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}My account · {{ BRAND }}{% endblock %}
+{% block body %}
+<h1>My account</h1>
+<div class="grid g2">
+  <div class="card">
+    <h2 style="margin-top:0">Subscription</h2>
+    {% set s = current_user.subscription %}
+    <p style="font-size:1.25rem;font-weight:700;margin:.2rem 0">{{ current_user.plan_name }}
+      {% if s %}<span class="tag ok">active</span>{% else %}<span class="tag no">free</span>{% endif %}</p>
+    {% if s %}
+      <p class="small">Runs until <b>{{ s.ends_at.strftime('%d %B %Y') }}</b> — {{ s.days_left }} day(s) left.</p>
+      {% if s.days_left <= 7 %}<div class="flash error">Your subscription ends soon. Renew to keep access.</div>{% endif %}
+    {% else %}
+      <p class="small muted">You are on the free plan. Subscribe to open the other sections and download results.</p>
+    {% endif %}
+    <p class="small">Sections you can open:<br>
+      {% for s2 in current_user.allowed_sections() %}<span class="tag ok">{{ s2.replace('-',' ') }}</span> {% endfor %}</p>
+    <p class="small">Downloads: {% if current_user.may_download() %}<span class="tag ok">included</span>
+      {% else %}<span class="tag no">not included</span>{% endif %}
+      &nbsp; Uploads this month: <b>{{ used }}</b>{% if limit %} of {{ limit }}{% else %} (no limit){% endif %}</p>
+    <p><a class="btn" href="{{ url_for('gate.app_signin') }}">Open the app</a>
+       <a class="btn sec" href="{{ url_for('billing.pricing') }}">Change plan</a></p>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Your details</h2>
+    <form method="post" action="{{ url_for('auth.change_details') }}">
+      <label for="n">Name</label><input id="n" name="name" value="{{ current_user.name }}">
+      <label for="o">Organisation</label><input id="o" name="organisation" value="{{ current_user.organisation }}">
+      <label for="p">Phone</label><input id="p" name="phone" value="{{ current_user.phone }}">
+      <p class="small muted">Email: {{ current_user.email }}</p>
+      <button class="btn sec" type="submit">Save details</button>
+    </form>
+    <h2>Change password</h2>
+    <form method="post" action="{{ url_for('auth.change_password') }}">
+      <label for="c">Current password</label><input id="c" name="current" type="password" required>
+      <div class="grid g2" style="gap:.2rem 1rem">
+        <div><label for="np">New password</label><input id="np" name="password" type="password" required></div>
+        <div><label for="np2">Repeat</label><input id="np2" name="password2" type="password" required></div>
+      </div>
+      <p><button class="btn sec" type="submit">Change password</button></p>
+    </form>
+  </div>
+</div>
+{% if payments %}
+<h2>Payments</h2>
+<div class="card"><table><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Method</th><th>Reference</th></tr>
+{% for p in payments %}<tr><td>{{ p.at.strftime('%d %b %Y') }}</td><td>{{ p.plan.name if p.plan else '' }}</td>
+<td>{{ p.currency }} {{ '{:,.0f}'.format(p.amount) }}</td><td>{{ p.method }}</td><td class="small muted">{{ p.reference }}</td></tr>{% endfor %}
+</table></div>
+{% endif %}
+{% endblock %}

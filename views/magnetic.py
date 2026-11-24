@@ -7,6 +7,7 @@ import streamlit as st
 from geoai import datasets, geophysics, interpret, magnetics, readers
 from ui.interp import tab_magnetic, upload
 from ui.interp.common import clear_widgets, new_run_id, ss
+from ui import gate
 
 st.title("2 · Magnetic")
 st.caption("Upload one magnetic survey file (ground or airborne TMI). GeoAI produces the standard interpretation "
@@ -123,5 +124,5 @@ if c2.button("Clear results", key="clear_magnetic"):
     st.rerun()
 tab_magnetic.render(entry["run"])
 st.divider()
-st.page_link("views/interpretation.py", label="Next: combine with your other data in **6 · Integrated gold "
+gate.page_link("views/interpretation.py", label="Next: combine with your other data in **6 · Integrated gold "
                                               "prediction**", icon="➡️")

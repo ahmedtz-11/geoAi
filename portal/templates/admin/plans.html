@@ -1,0 +1,112 @@
+{% extends "base.html" %} {% block title %}Plans · {{ BRAND }}{% endblock %} {%
+block wide %}wide{% endblock %} {% block body %}
+<h1>Plans</h1>
+{% include "admin/_nav.html" %}
+<p class="small muted">
+  A plan is just data: change what it includes here and every subscriber on it
+  is affected at once, with no change to the app.
+</p>
+<div class="card">
+  <table>
+    <tr>
+      <th>Code</th>
+      <th>Name</th>
+      <th>Price</th>
+      <th>Period</th>
+      <th>Sections</th>
+      <th>Downloads</th>
+      <th>Uploads</th>
+      <th>Seats</th>
+    </tr>
+    {% for p in plans %}
+    <tr>
+      <td><code>{{ p.code }}</code></td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.currency }} {{ '{:,.0f}'.format(p.price) }}</td>
+      <td>{{ p.period_days }}d</td>
+      <td class="small">
+        {{ p.section_list|length }} of {{ sections|length }}
+      </td>
+      <td>{{ 'yes' if p.can_download else 'no' }}</td>
+      <td>{{ p.max_uploads_per_month or '∞' }}</td>
+      <td>{{ p.seats }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+<h2>Add or edit a plan</h2>
+<div class="card">
+  <form method="post">
+    <div class="grid g4" style="gap: 0.2rem 1rem">
+      <div>
+        <label for="code">Short code</label
+        ><input id="code" name="code" required placeholder="pro" />
+      </div>
+      <div>
+        <label for="name">Name</label
+        ><input id="name" name="name" placeholder="Professional" />
+      </div>
+      <div>
+        <label for="price">Price</label
+        ><input id="price" name="price" type="number" step="any" value="0" />
+      </div>
+      <div>
+        <label for="currency">Currency</label
+        ><input id="currency" name="currency" value="TZS" />
+      </div>
+      <div>
+        <label for="period_days">Period (days)</label
+        ><input id="period_days" name="period_days" type="number" value="30" />
+      </div>
+      <div>
+        <label for="max_uploads_per_month"
+          >Uploads a month (0 = no limit)</label
+        >
+        <input
+          id="max_uploads_per_month"
+          name="max_uploads_per_month"
+          type="number"
+          value="0"
+        />
+      </div>
+      <div>
+        <label for="seats">Seats</label
+        ><input id="seats" name="seats" type="number" value="1" />
+      </div>
+    </div>
+    <label>Sections this plan opens</label>
+    <div class="grid g3" style="gap: 0.1rem 1rem">
+      {% for key, label in sections.items() %}
+      <label class="small" style="font-weight: 400"
+        ><input
+          type="checkbox"
+          name="sections"
+          value="{{ key }}"
+          style="width: auto"
+        />
+        {{ label }}</label
+      >
+      {% endfor %}
+    </div>
+    <p>
+      <label class="small" style="font-weight: 400"
+        ><input
+          type="checkbox"
+          name="can_download"
+          style="width: auto"
+          checked
+        />
+        Downloads included</label
+      >
+      <label class="small" style="font-weight: 400"
+        ><input type="checkbox" name="is_public" style="width: auto" checked />
+        Show on the pricing page</label
+      >
+    </p>
+    <button class="btn" type="submit">Save plan</button>
+    <span class="small muted"
+      >An existing code is updated; a new one is created.</span
+    >
+  </form>
+</div>
+{% endblock %}

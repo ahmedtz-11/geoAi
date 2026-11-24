@@ -16,6 +16,7 @@ from geoai import coords, export, geophysics, interpret, ipdata, ipinv, plots, r
 from geoai.coords import parse_column
 from ui.interp import upload
 from ui.interp.common import clear_widgets, new_run_id, safe_name, ss
+from ui import gate
 
 NONE = "(none)"
 MIN_READINGS = 6
@@ -39,8 +40,8 @@ def num(text):
 
 
 st.title("3 · IP (induced polarisation)")
-st.caption("Upload one file per survey line (.csv, .txt, or a Res2DInv .dat). Each line gives one pseudosection image showing where "
-           "chargeability (or resistivity) is anomalous and at what depth.")
+st.caption("Upload one file per survey line (.csv, .txt, or a Res2DInv .dat). Each line gives an inverse model resistivity "
+           "section and an inverse model chargeability section, shown together for comparison.")
 
 # ---------- step 1: lines ----------
 st.subheader("Step 1 · Lines and files")
@@ -380,5 +381,5 @@ st.caption("High chargeability usually means disseminated sulphides (pyrite, ars
            "inverts resistivity and updates the sensitivities for it, so its section will differ in detail, most "
            "where the ground resistivity changes sharply.")
 st.divider()
-st.page_link("views/interpretation.py", label="Next: combine with your other data in **6 · Integrated gold "
+gate.page_link("views/interpretation.py", label="Next: combine with your other data in **6 · Integrated gold "
                                               "prediction**", icon="➡️")

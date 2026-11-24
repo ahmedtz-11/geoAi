@@ -1,0 +1,44 @@
+{% extends "base.html" %} {% block title %}Payments · {{ BRAND }}{% endblock %}
+{% block wide %}wide{% endblock %} {% block body %}
+<h1>Payments</h1>
+{% include "admin/_nav.html" %}
+<div class="card">
+  <p class="small muted">
+    Total received: <b>{{ '{:,.0f}'.format(total) }}</b>
+  </p>
+  <table>
+    <tr>
+      <th>Date</th>
+      <th>User</th>
+      <th>Plan</th>
+      <th>Amount</th>
+      <th>Method</th>
+      <th>Reference</th>
+      <th>Status</th>
+    </tr>
+    {% for p in rows %}
+    <tr>
+      <td class="small">{{ p.at.strftime('%d %b %Y %H:%M') }}</td>
+      <td class="small">
+        <a href="{{ url_for('admin.user_detail', uid=p.user_id) }}"
+          >{{ p.user.email }}</a
+        >
+      </td>
+      <td class="small">{{ p.plan.name if p.plan else '' }}</td>
+      <td>{{ p.currency }} {{ '{:,.0f}'.format(p.amount) }}</td>
+      <td class="small">{{ p.method }}</td>
+      <td class="small muted">{{ p.reference }}</td>
+      <td>
+        <span class="tag {{ 'ok' if p.status=='paid' else 'warn' }}"
+          >{{ p.status }}</span
+        >
+      </td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="7" class="muted">No payments recorded yet.</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

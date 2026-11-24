@@ -12,6 +12,7 @@ import streamlit as st
 
 from geoai import coords, export, interpret, plots, readers, structure
 from ui.interp.common import clear_widgets, new_run_id, ss, to_lonlat
+from ui import gate
 
 TABLES = ["csv", "xls", "xlsx"]
 MAPS = ["png", "jpg", "jpeg", "tif", "tiff"]
@@ -359,5 +360,5 @@ else:
                          "n_used": int(ok.sum()), "n_total": int(len(res)), "sets_of_reading": set_of}
 
 st.divider()
-st.page_link(PREDICTION_PAGE, icon="➡️",
+gate.page_link(PREDICTION_PAGE, icon="➡️",
              label="Next: combine with your other data in **6 · Integrated gold prediction**")

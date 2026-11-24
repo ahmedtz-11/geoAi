@@ -11,6 +11,7 @@ from geoai import interpret
 
 from . import upload
 from .common import clear_widgets, new_run_id, ss
+from ui import gate
 
 PREDICTION_PAGE = "views/interpretation.py"
 
@@ -66,4 +67,4 @@ def data_page(slot, title, intro, render_results, settings_ui=None):
         st.error(e)
     render_results(entry["run"])
     st.divider()
-    st.page_link(PREDICTION_PAGE, label="Next: combine with your other data in **6 · Integrated gold prediction**", icon="➡️")
+    gate.page_link(PREDICTION_PAGE, label="Next: combine with your other data in **6 · Integrated gold prediction**", icon="➡️")

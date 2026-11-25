@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ section_title or "Workbench" }} · {{ BRAND }}{% endblock %}
+
+{% block body %}{% endblock %}
+
+{% block page %}
+<div class="shell">
+  <aside class="side">
+    <div class="side-head">Workbench</div>
+    <nav class="side-nav">
+      {% for s in app_sections %}
+        {% if s.open %}
+          <a href="{{ url_for(s.endpoint) }}" class="{{ 'on' if s.key == section_key }}">
+            <span class="ic">{{ s.icon }}</span>
+            <span class="tx">{{ s.title }}</span>
+            {% if s.has_result %}<span class="dot" title="You have results in this section"></span>{% endif %}
+          </a>
+        {% else %}
+          <span class="locked" title="Comes with a higher plan">
+            <span class="ic">{{ s.icon }}</span><span class="tx">{{ s.title }}</span><span class="lk">🔒</span>
+          </span>
+        {% endif %}
+      {% endfor %}
+    </nav>
+    {% if locked_count %}
+      <p class="side-note small muted">{{ locked_count }} more section{{ '' if locked_count == 1 else 's' }}
+        come{{ 's' if locked_count == 1 else '' }} with the higher plans.
+        <a href="{{ url_for('billing.pricing') }}">See plans</a>.</p>
+    {% endif %}
+    <div class="side-foot small muted">
+      {{ current_user.name or current_user.email }}<br>
+      {% if current_user.is_admin %}
+        <span class="tag ok">Administrator</span> every section
+      {% else %}
+        <span class="tag {{ 'ok' if current_user.subscription else 'no' }}">{{ current_user.plan.name }}</span>
+        {% if current_user.days_left is not none %}<br>{{ current_user.days_left }} days left{% endif %}
+        {% if allowance[1] %}<br>{{ allowance[2] }} of {{ allowance[1] }} runs left this month{% endif %}
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in messages %}<div class="flash {{ cat }}">{{ m }}</div>{% endfor %}
+    {% endwith %}
+    {% block main %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

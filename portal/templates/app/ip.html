@@ -1,0 +1,145 @@
+{% extends "app/layout.html" %}
+{% from "app/_upload.html" import upload_step with context %}
+{% from "app/_fields.html" import fieldset with context %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>3 · IP (induced polarisation)</h1>
+<p class="lede">Upload one file per survey line — CSV, text, or a Res2DInv <code>.dat</code>. Each line
+gives an inverse model resistivity section and an inverse model chargeability section, shown together
+on the same axes so they can be compared directly.</p>
+
+{% if running %}
+  <div class="runbar"><span class="spin"></span> A run is in progress.
+    <span class="sp"><a class="btn sec sm" href="{{ url_for('app.wait', section_key='ip', job_id=running.id) }}">Watch it</a></span>
+  </div>
+{% endif %}
+
+{{ upload_step(items, section, 1, "Line files", multiple=True,
+   note="One file per survey line. Add them all at once, or a few at a time.") }}
+
+<form method="post" action="{{ url_for('app.ip') }}">
+  <input type="hidden" name="do" value="submit">
+  <input type="hidden" name="_seen" value="1">
+
+  {% if lines %}
+  <section class="step card">
+    <h2><span class="n">2</span> Name and place each line</h2>
+    <p class="hint">The position is optional. Give a start easting, a start northing and a bearing to
+      place a line whose stations are distances along it (0, 20, 40 …) on the map; give a northing
+      alone when the station values are already eastings.</p>
+    {% for l in lines %}
+      <fieldset>
+        <legend>{{ l.file }}</legend>
+        <div class="fieldgrid">
+          <div class="field w-quarter">
+            <label for="line{{ l.index }}_name">Line name</label>
+            <input type="text" id="line{{ l.index }}_name" name="line{{ l.index }}_name" value="{{ l.name }}">
+          </div>
+          <div class="field w-quarter">
+            <label for="line{{ l.index }}_e0">Start easting (m)</label>
+            <input type="text" id="line{{ l.index }}_e0" name="line{{ l.index }}_e0" value="{{ l.e0 }}"
+                   placeholder="optional">
+          </div>
+          <div class="field w-quarter">
+            <label for="line{{ l.index }}_north">Start northing (m)</label>
+            <input type="text" id="line{{ l.index }}_north" name="line{{ l.index }}_north"
+                   value="{{ l.north }}" placeholder="optional">
+          </div>
+          <div class="field w-quarter">
+            <label for="line{{ l.index }}_bearing">Bearing (° from north)</label>
+            <input type="text" id="line{{ l.index }}_bearing" name="line{{ l.index }}_bearing"
+                   value="{{ l.bearing }}">
+          </div>
+        </div>
+        {% if l.error %}<p class="note err">{{ l.error }}</p>{% endif %}
+      </fieldset>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if layout %}
+  <section class="step card">
+    <h2><span class="n">3</span> Columns</h2>
+    <p class="hint">Read from <strong>{{ layout.name }}</strong>; the same layout is used for every line file.</p>
+
+    {% if layout.res2d %}
+      <p class="note ok">Res2DInv data file: <strong>{{ layout.res2d.title }}</strong> ·
+        {{ layout.res2d.array }} · unit electrode spacing {{ layout.res2d.unit_spacing }} m ·
+        {{ layout.res2d.read }} of {{ layout.res2d.declared }} readings read{% if layout.res2d.ip_name %} ·
+        IP: {{ layout.res2d.ip_name }} in {{ layout.ip_unit }}{% else %} · no IP data{% endif %}.</p>
+    {% endif %}
+    {% if layout.electrodes %}
+      <p class="note ok">Electrode positions found ({{ layout.detected.cols|join(", ") }}):
+        <strong>{{ layout.detected.array }}</strong> array, dipole a =
+        <strong>{{ "%g"|format(layout.detected.a) }} m</strong>. Station positions and pseudo-depths are
+        calculated from the electrodes; remote electrodes such as 9999999 are ignored.</p>
+    {% endif %}
+
+    <details class="adv"><summary>First rows of {{ layout.name }}</summary>
+      <div class="inner"><div class="tablewrap">
+        {{ layout.preview.to_html(index=False, border=0, classes="data")|safe }}</div></div>
+    </details>
+
+    {{ fieldset(layout.fields) }}
+
+    {% if crs_needed %}
+      <div class="fieldgrid"><div class="field w-full">
+        <label for="crs">Coordinate system of the line positions</label>
+        <select id="crs" name="crs">
+          {% for o in crs_options %}
+            <option value="{{ o }}" {{ "selected" if o == values.get('crs') }}>{{ o }}</option>
+          {% endfor %}
+        </select>
+      </div></div>
+    {% endif %}
+
+    <fieldset><legend>Data-quality filters</legend>
+      {{ fieldset(layout.quality) }}
+    </fieldset>
+  </section>
+
+  <section class="step card">
+    <h2><span class="n">4</span> Submit</h2>
+    {% if summary %}
+      {% if summary.error %}
+        <p class="note err">{{ summary.error }}</p>
+      {% else %}
+        <div class="tablewrap" style="margin-bottom:1rem">{{ summary.rows }}</div>
+        <p class="hint">{{ summary.ready }} of {{ summary.total }} line file(s) ready.</p>
+      {% endif %}
+    {% endif %}
+    <div class="actions">
+      <button class="btn" type="submit" {{ "disabled" if running or not summary or not summary.ready }}>
+        🚀 Submit &amp; interpret</button>
+      <span class="hint">Inverting a line takes a few seconds each.</span>
+    </div>
+  </section>
+  {% endif %}
+</form>
+
+{% if not items and not run %}
+  <div class="card empty">
+    <div class="big">⚡</div>
+    <p>Upload one file per survey line to begin. There are samples in
+      <code>sample_data/ip_line_*.csv</code> and <code>sample_data/ip_res2dinv_L1.dat</code>.</p>
+  </div>
+{% endif %}
+
+{% if run %}
+  <h2 id="results">Inverse model sections</h2>
+  <div class="runbar">
+    <span>✅ {{ run.meta().get("files", [])|length }} file(s)</span>
+    <span class="muted">{{ run.meta().get("seconds", 0) }}s</span>
+    <span class="sp">
+      <form method="post" action="{{ url_for('app.delete_run', section_key='ip', run_id=run.id) }}"
+            onsubmit="return confirm('Clear these results?')">
+        <button class="btn sec sm" type="submit">Clear results</button>
+      </form>
+    </span>
+  </div>
+  <div id="ip-sections" data-lazy="{{ url_for('app.ip_sections', run=run.id) }}"></div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

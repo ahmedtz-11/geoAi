@@ -1,0 +1,35 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+<p class="hint">{{ cfg.caption }}</p>
+<form class="figbar" data-panel-form="rs-{{ kind }}"
+      action="{{ url_for('app.remote_panel', name=kind, run=run.id, **aoi_q) }}">
+  <input type="hidden" name="_t" value="1">
+  <label style="margin:0">Method</label>
+  {% for m in ["Band ratio", "Crósta PCA"] %}
+    <span class="inline" style="margin:0">
+      <input type="radio" id="m-{{ kind }}-{{ loop.index }}" name="method" value="{{ m }}"
+             {{ "checked" if m == method }}>
+      <label for="m-{{ kind }}-{{ loop.index }}">{{ m }}</label></span>
+  {% endfor %}
+  <span class="inline" style="margin:0 0 0 1rem">
+    <input type="checkbox" id="veg-{{ kind }}" name="veg" value="1" {{ "checked" if hide_veg }}>
+    <label for="veg-{{ kind }}">Hide dense vegetation (NDVI above 0.4)</label></span>
+</form>
+{% if too_few %}
+  <p class="note warn">Too few clear, unvegetated pixels in the area. Untick the vegetation option or
+    choose another scene.</p>
+{% else %}
+  {{ metrics([("Scene date", date), ("Mean (%s)"|format(unit), "%.3f"|format(thr[0])),
+              ("Strong anomaly area", "{:,.1f} ha".format(strong_ha)),
+              ("Area mapped", "{:.0f}% of AOI".format(mapped_pct))]) }}
+  <div class="figrow" style="grid-template-columns:1fr 1fr">
+    <div class="fig imgwrap"><img src="{{ fig_url(kind ~ '-index', **q) }}" alt="{{ cfg.name }} index" loading="lazy"></div>
+    <div class="fig imgwrap"><img src="{{ fig_url(kind ~ '-classes', **q) }}" alt="{{ cfg.class_title }}" loading="lazy"></div>
+  </div>
+  {% if cr %}<p class="hint">{{ cr.info }} Selected: PC{{ cr.pc_index + 1 }}{% if cr.sign < 0 %}
+    (sign inverted so bright = mineral){% endif %}.</p>{% endif %}
+  <div class="tablewrap">{{ table }}</div>
+  {{ dlbar([("Index map (PNG)", dl("png", kind ~ "-index", **q)),
+            ("Classes map (PNG)", dl("png", kind ~ "-classes", **q)),
+            (cfg.name ~ " index + classes (GeoTIFF)", dl("tif", kind, **q))]) }}
+  <p class="hint">{{ cfg.note }}</p>
+{% endif %}

@@ -1,0 +1,39 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+<form class="figbar" data-panel-form="mag-lineaments"
+      action="{{ url_for('app.magnetic_panel', name='lineaments', view=use, run=run.id) }}">
+  <label for="lin-pct" style="margin:0">Selectivity</label>
+  <input type="range" id="lin-pct" name="pct" value="{{ pct }}" min="80" max="98" style="width:170px">
+  <output>{{ pct }}</output>
+  <label for="lin-len" style="margin:0 0 0 1rem">Minimum length (cells)</label>
+  <input type="range" id="lin-len" name="len" value="{{ lcells }}" min="5" max="40" style="width:170px">
+  <output>{{ lcells }}</output>
+</form>
+<p class="hint">Higher selectivity keeps only the clearest structures.</p>
+
+{{ metrics([("Lineaments", "{:,}".format(lines|length)),
+            ("Total length", "%.1f km"|format(total_km)),
+            ("Main trend", main)]) }}
+
+{% if not lines %}
+  <p class="note warn">No lineaments were found. Lower the selectivity.</p>
+{% else %}
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap">
+      <img src="{{ fig_url('lin-' ~ pct ~ '-' ~ lcells) }}" alt="Magnetic lineaments" loading="lazy">
+    </div>
+    {{ dlbar([("PNG", dl("png", "lin-" ~ pct ~ "-" ~ lcells)),
+              ("Lineaments (GeoJSON)", dl("geojson", "lineaments", pct=pct, len=lcells))]) }}
+  </div>
+  <div class="fignote">
+    <div class="fig imgwrap">
+      <img src="{{ fig_url('rose-' ~ pct ~ '-' ~ lcells) }}" alt="Strike rose" loading="lazy">
+    </div>
+    {{ rose_table }}
+    {{ dlbar([("Rose PNG", dl("png", "rose-" ~ pct ~ "-" ~ lcells)),
+              ("Strikes (CSV)", dl("csv", "lineaments", pct=pct, len=lcells))]) }}
+  </div>
+</div>
+{% endif %}
+<p class="hint">Faults, shear zones, dykes and contacts traced automatically on the tilt derivative.
+Their strike is the main structural control on where gold-bearing fluids flowed.</p>

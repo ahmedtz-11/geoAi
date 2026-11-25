@@ -1,0 +1,16 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+{{ metrics([("Magnetic / IP", "%d file%s"|format(counts.geophysics, "" if counts.geophysics == 1 else "s")),
+            ("Geology", "%d file%s"|format(counts.geology, "" if counts.geology == 1 else "s")),
+            ("Remote sensing", "%d file%s"|format(counts.remote, "" if counts.remote == 1 else "s")),
+            ("Geochemistry", "%d file%s"|format(counts.geochem, "" if counts.geochem == 1 else "s"))]) }}
+<h4>Key findings</h4>
+{% if findings %}
+  <ul>{% for f in findings %}<li>{{ f }}</li>{% endfor %}</ul>
+{% else %}
+  <p class="muted">No findings yet.</p>
+{% endif %}
+{% if c.grid %}
+  <div class="fig imgwrap"><img src="{{ fig_url('overview') }}" alt="Overview map" loading="lazy"></div>
+  {{ dlbar([("Overview map (PNG)", dl("png", "overview"))]) }}
+  <p class="hint">Targets use the current settings on the Gold prediction tab.</p>
+{% endif %}

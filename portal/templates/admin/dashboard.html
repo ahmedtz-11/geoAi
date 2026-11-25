@@ -1,112 +1,41 @@
-{% extends "base.html" %} {% block title %}Admin · {{ BRAND }}{% endblock %} {%
-block wide %}wide{% endblock %} {% block body %}
-<h1>Admin</h1>
-{% include "admin/_nav.html" %}
+{% extends "base.html" %}
+{% block title %}Admin · {{ BRAND }}{% endblock %}
+{% block wide %}wide{% endblock %}
+{% block body %}
+<h1>Admin</h1>{% include "admin/_nav.html" %}
 <div class="grid g4">
-  <div class="stat">
-    <div class="n">{{ stats.users }}</div>
-    <div class="l">Accounts</div>
-  </div>
-  <div class="stat">
-    <div class="n">{{ stats.active }}</div>
-    <div class="l">Paying now</div>
-  </div>
-  <div class="stat">
-    <div class="n">{{ stats.new_this_month }}</div>
-    <div class="l">New this month</div>
-  </div>
-  <div class="stat">
-    <div class="n">
-      {{ currency }} {{ '{:,.0f}'.format(stats.revenue_month) }}
-    </div>
-    <div class="l">Received this month</div>
-  </div>
+  <div class="stat"><div class="n">{{ stats.users }}</div><div class="l">Accounts</div></div>
+  <div class="stat"><div class="n">{{ stats.active }}</div><div class="l">Paying now</div></div>
+  <div class="stat"><div class="n">{{ stats.new_this_month }}</div><div class="l">New this month</div></div>
+  <div class="stat"><div class="n">{{ currency }} {{ '{:,.0f}'.format(stats.revenue_month) }}</div>
+    <div class="l">Received this month</div></div>
 </div>
-<div class="grid g2" style="margin-top: 1rem">
-  <div class="card">
-    <h2 style="margin-top: 0">Subscribers by plan</h2>
-    {% if by_plan %}
-    <table>
-      {% for name, n in by_plan.items() %}
-      <tr>
-        <td>{{ name }}</td>
-        <td><b>{{ n }}</b></td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% else %}
-    <p class="muted small">Nobody is on a paid plan yet.</p>
-    {% endif %}
-    <p class="small muted" style="margin-bottom: 0">
-      Received in total: {{ currency }} {{ '{:,.0f}'.format(stats.revenue_total)
-      }}
-    </p>
+<div class="grid g2" style="margin-top:1rem">
+  <div class="card"><h2 style="margin-top:0">Subscribers by plan</h2>
+    {% if by_plan %}<table>{% for name, n in by_plan.items() %}<tr><td>{{ name }}</td><td><b>{{ n }}</b></td></tr>{% endfor %}</table>
+    {% else %}<p class="muted small">Nobody is on a paid plan yet.</p>{% endif %}
+    <p class="small muted" style="margin-bottom:0">Received in total: {{ currency }} {{ '{:,.0f}'.format(stats.revenue_total) }}</p>
   </div>
-  <div class="card">
-    <h2 style="margin-top: 0">Ending within 7 days</h2>
-    {% if stats.expiring %}
-    <table>
-      <tr>
-        <th>User</th>
-        <th>Plan</th>
-        <th>Days</th>
-      </tr>
-      {% for s in stats.expiring %}
-      <tr>
-        <td>
-          <a href="{{ url_for('admin.user_detail', uid=s.user_id) }}"
-            >{{ s.user.email }}</a
-          >
-        </td>
-        <td>{{ s.plan.name }}</td>
-        <td><span class="tag warn">{{ s.days_left }}</span></td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% else %}
-    <p class="muted small">Nothing ending soon.</p>
-    {% endif %}
+  <div class="card"><h2 style="margin-top:0">Ending within 7 days</h2>
+    {% if stats.expiring %}<table><tr><th>User</th><th>Plan</th><th>Days</th></tr>
+      {% for s in stats.expiring %}<tr>
+        <td><a href="{{ url_for('admin.user_detail', uid=s.user_id) }}">{{ s.user.email }}</a></td>
+        <td>{{ s.plan.name }}</td><td><span class="tag warn">{{ s.days_left }}</span></td></tr>{% endfor %}</table>
+    {% else %}<p class="muted small">Nothing ending soon.</p>{% endif %}
   </div>
 </div>
 <div class="grid g2">
-  <div class="card">
-    <h2 style="margin-top: 0">Latest activity</h2>
-    <table>
-      <tr>
-        <th>When</th>
-        <th>Who</th>
-        <th>What</th>
-      </tr>
-      {% for e in recent %}
-      <tr>
-        <td class="small muted">{{ e.at.strftime('%d %b %H:%M') }}</td>
-        <td class="small">
-          {{ users[e.user_id].email if e.user_id in users else '—' }}
-        </td>
-        <td class="small">
-          {{ e.kind }}{% if e.section %} · {{ e.section }}{% endif %} {% if
-          e.detail %}<span class="muted">{{ e.detail }}</span>{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
+  <div class="card"><h2 style="margin-top:0">Latest activity</h2>
+    <table><tr><th>When</th><th>Who</th><th>What</th></tr>
+    {% for e in recent %}<tr><td class="small muted">{{ e.at.strftime('%d %b %H:%M') }}</td>
+      <td class="small">{{ users[e.user_id].email if e.user_id in users else '—' }}</td>
+      <td class="small">{{ e.kind }}{% if e.section %} · {{ e.section }}{% endif %}
+        {% if e.detail %}<span class="muted">{{ e.detail }}</span>{% endif %}</td></tr>{% endfor %}</table>
   </div>
-  <div class="card">
-    <h2 style="margin-top: 0">Recent admin actions</h2>
-    <table>
-      <tr>
-        <th>When</th>
-        <th>Who</th>
-        <th>Action</th>
-      </tr>
-      {% for a in audit %}
-      <tr>
-        <td class="small muted">{{ a.at.strftime('%d %b %H:%M') }}</td>
-        <td class="small">{{ a.actor }}</td>
-        <td class="small">{{ a.action }} {{ a.target }}</td>
-      </tr>
-      {% endfor %}
-    </table>
+  <div class="card"><h2 style="margin-top:0">Recent admin actions</h2>
+    <table><tr><th>When</th><th>Who</th><th>Action</th></tr>
+    {% for a in audit %}<tr><td class="small muted">{{ a.at.strftime('%d %b %H:%M') }}</td>
+      <td class="small">{{ a.actor }}</td><td class="small">{{ a.action }} {{ a.target }}</td></tr>{% endfor %}</table>
   </div>
 </div>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% from "app/_bits.html" import dlbar with context %}
+<p class="hint">Unsupervised K-means classification of Sentinel-2 reflectance and mineral indices.
+Pixels with a similar spectrum are grouped into units that usually follow rock type and its weathering
+cover. Units are spectral, so name them from field mapping or a geological map.</p>
+<form class="figbar" data-panel-form="rs-lithology"
+      action="{{ url_for('app.remote_panel', name='lithology', run=run.id, **aoi_q) }}">
+  <input type="hidden" name="_t" value="1">
+  <label for="lith-k" style="margin:0">Number of units <output class="muted">{{ k }}</output></label>
+  <input type="range" id="lith-k" name="k" value="{{ k }}" min="3" max="12" style="width:190px">
+</form>
+<p class="hint">Start with 5–8. More units split the ground more finely.</p>
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('lith-map', **q) }}" alt="Lithological classification" loading="lazy"></div>
+    {{ dlbar([("Map (PNG)", dl("png", "lith-map", **q)), ("Classification (GeoTIFF)", dl("tif", "lithology", **q))]) }}
+  </div>
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('lith-spectra', **q) }}" alt="Unit spectra" loading="lazy"></div>
+  </div>
+</div>
+<div class="tablewrap">{{ table }}</div>
+{{ dlbar([("Units table (CSV)", dl("csv", "lithology", **q))]) }}
+<p class="hint">Interpretations are automatic hints from each unit's average spectrum, not confirmed
+rock types.</p>

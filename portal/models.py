@@ -15,7 +15,8 @@ from sqlalchemy import func
 db = SQLAlchemy()
 _hasher = PasswordHasher()
 
-# every part of the app a plan can grant. The keys match the url_path of each Streamlit page.
+# every part of the app a plan can grant. The keys match the workbench's sections,
+# and a test keeps the two lists from drifting apart.
 SECTIONS = {
     "home": "Home",
     "remote-sensing": "1 · Remote sensing",

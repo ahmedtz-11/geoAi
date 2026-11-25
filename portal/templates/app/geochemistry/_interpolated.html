@@ -1,0 +1,102 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+
+<form class="card" data-panel-form="gc-interpolated"
+      action="{{ url_for('app.geochemistry_panel', name='interpolated', run=run.id, method=method) }}">
+  <input type="hidden" name="_i" value="1">
+  <div class="fieldgrid">
+    <div class="field w-half">
+      <label for="imethod">Interpolation method</label>
+      <select id="imethod" name="imethod">
+        {% for m in methods %}<option value="{{ m }}" {{ "selected" if m == p.imethod }}>{{ m }}</option>{% endfor %}
+      </select>
+      <p class="hint"><strong>Natural neighbour</strong> takes from each sample the share of ground a
+        new sample at that spot would steal from it: no bull's-eyes, and it never invents values
+        outside your data. <strong>Inverse distance</strong> is the simple weighted average,
+        predictable but with a bull's-eye at every sample. <strong>Ordinary kriging</strong> measures
+        how fast the assays decorrelate with distance and weights the samples to minimise the error;
+        it is the only one that also reports its own uncertainty. <strong>Minimum curvature</strong>
+        gives the smoothest contours but can overshoot in gaps.</p>
+    </div>
+    <div class="field w-quarter">
+      <div class="inline">
+        <input type="checkbox" id="auto_cell" name="auto_cell" value="1" {{ "checked" if p.auto_cell }}>
+        <label for="auto_cell">Automatic grid interval</label>
+      </div>
+      {% if p.auto_cell %}
+        <p class="hint">{{ "%.1f"|format(suggested) }} m — a third of your sample spacing.</p>
+      {% else %}
+        <label for="cell">Grid interval (m)</label>
+        <input type="number" id="cell" name="cell" value="{{ p.cell or suggested|round(1) }}"
+               min="0.5" max="2000" step="0.5">
+        <p class="hint">Finer than about a third of the sample spacing adds no real detail, only a
+          smoother picture.</p>
+      {% endif %}
+    </div>
+    <div class="field w-quarter">
+      {% if p.imethod == kriging %}
+        <label for="vmodel">Variogram model</label>
+        <select id="vmodel" name="vmodel">
+          {% for m in variograms %}<option value="{{ m }}" {{ "selected" if m == p.vmodel }}>{{ m }}</option>{% endfor %}
+        </select>
+        <p class="hint">Auto fits all three and keeps the best.</p>
+      {% elif p.imethod == idw %}
+        <label for="power">Distance power <output class="muted">{{ p.power }}</output></label>
+        <input type="range" id="power" name="power" value="{{ p.power }}" min="1" max="4" step="0.5">
+        <p class="hint">Higher gives nearby samples more say and makes the map blockier.</p>
+      {% endif %}
+    </div>
+    <div class="field w-full">
+      <div class="inline">
+        <input type="checkbox" id="log" name="log" value="1" {{ "checked" if p.log }}>
+        <label for="log">Interpolate the logarithm of the assays</label>
+      </div>
+      <p class="hint">Gold is log-normal, so interpolating the logs stops a single high sample
+        dominating the whole map. The colour bar stays in your own units.</p>
+    </div>
+  </div>
+</form>
+
+{% if error %}
+  <p class="note err">Could not interpolate these samples: {{ error }}</p>
+{% else %}
+  <div class="fig imgwrap"><img src="{{ fig_url(figname, **iq) }}" alt="Interpolated gold" loading="lazy"></div>
+  {{ dlbar([("Interpolated map (PNG)", dl("png", figname, **iq)),
+            ("Interpolated grid (GeoTIFF)", dl("tif", "grid", **iq))]) }}
+  <p class="hint">{{ p.imethod }} on a {{ "%.1f"|format(g.cell) }} m grid{% if p.log %} through the
+    logs of the assays{% endif %}, blanked more than {{ "%.0f"|format(g.reach) }} m from a sample and
+    clipped to the sampled ground. What happens between samples is an estimate: trust the sample
+    points, not the colours between them.</p>
+
+  {% if vg %}
+    {{ metrics([("Variogram model", vg.model),
+                ("Range", "{:,.0f} m".format(vg["range"])),
+                ("Nugget / sill", "{:.0%}".format(vg.nugget_ratio)),
+                ("Fit", "%.2f"|format(vg.fit))]) }}
+    <p class="hint">Beyond the range two samples tell you nothing about each other — it is roughly the
+      size of the anomalies, and a good guide to infill spacing. The nugget is the share of the
+      variation already present between samples a metre apart: sampling and assay noise, and the
+      nugget effect of coarse gold.</p>
+    <div class="figrow">
+      <div>
+        <div class="fig imgwrap"><img src="{{ fig_url(vgname, **iq) }}" alt="Fitted variogram" loading="lazy"></div>
+      </div>
+      <div>
+        <div class="fig imgwrap"><img src="{{ fig_url(errname, **iq) }}" alt="Kriging standard error" loading="lazy"></div>
+      </div>
+    </div>
+    <p class="hint">Kriging is the only method here that reports its own uncertainty. The error map is
+      lowest at the samples and rises between them; it depends on where you sampled, not on what the
+      assays were, so it shows where another sample would buy you the most.</p>
+    {% if vg.nugget_ratio > 0.5 %}
+      <p class="note warn">The nugget is {{ "{:.0%}".format(vg.nugget_ratio) }} of the sill, so most
+        of the variation between your samples is noise rather than structure. Kriging will smooth this
+        map heavily, and it is worth checking field duplicates before trusting small features anywhere
+        on this page.</p>
+    {% endif %}
+  {% endif %}
+  {% if p.imethod == kriging %}
+    <p class="hint">Kriging smooths towards the local mean wherever there is a nugget, so its peaks are
+      lower than the sample values. That is correct, not a fault: compare it with natural neighbour to
+      see how much of a peak is one sample.</p>
+  {% endif %}
+{% endif %}

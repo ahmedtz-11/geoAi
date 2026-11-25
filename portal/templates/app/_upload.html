@@ -1,0 +1,67 @@
+{% from "app/_fields.html" import fieldset with context %}
+
+{# The file box, plus a panel per staged file with whatever that file still needs decided. #}
+{% macro upload_step(items, section, number=1, title="Upload the data", multiple=False, note=None) %}
+<section class="step card {{ 'done' if items }}">
+  <h2><span class="n">{{ number }}</span> {{ title }}</h2>
+  {% if note %}<p class="hint">{{ note }}</p>{% endif %}
+
+  <form method="post" enctype="multipart/form-data"
+        action="{{ url_for(section.endpoint) }}#files" data-reconfigure="1">
+    <input type="hidden" name="do" value="upload">
+    <div class="filebox">
+      <div class="big">Drop {{ "files" if multiple else "a file" }} here, or choose below</div>
+      <input type="file" name="file" {{ "multiple" if multiple }} accept="{{ accept_attr }}">
+      <p class="hint" style="margin-top:.5rem">{{ accept_text }}</p>
+    </div>
+  </form>
+
+  {% if items|length > 1 %}
+    <form method="post" action="{{ url_for(section.endpoint) }}" style="margin:.7rem 0 0;text-align:right">
+      <input type="hidden" name="do" value="clear">
+      <button class="btn sec sm" type="submit">Remove all {{ items|length }} files</button>
+    </form>
+  {% endif %}
+
+  {% for it in items %}
+    <div class="chosen" id="files">
+      <span>📄</span>
+      <strong>{{ it.name }}</strong>
+      {% if it.info %}
+        <span class="muted small">
+          {%- if it.info.kind == "table" %}{{ "{:,}".format(it.info.rows) }} rows · {{ it.info.columns|length }} columns
+          {%- elif it.info.kind == "raster" %}GeoTIFF · {{ it.info.layers|length }} band(s) ·
+            {{ it.info.shape[1] }}×{{ it.info.shape[0] }} cells{% if it.info.epsg %} · EPSG:{{ it.info.epsg }}{% endif %}
+          {%- else %}picture{% endif -%}
+        </span>
+      {% endif %}
+      <form method="post" action="{{ url_for(section.endpoint) }}" style="margin-left:auto">
+        <input type="hidden" name="do" value="remove">
+        <input type="hidden" name="name" value="{{ it.name }}">
+        <button class="btn sec sm" type="submit">Remove</button>
+      </form>
+    </div>
+    {% if it.error %}
+      <p class="note err">{{ it.error }}</p>
+    {% elif it.info.kind == "table" and it.info.preview is not none %}
+      <details class="adv"><summary>First rows of {{ it.name }}</summary>
+        <div class="inner"><div class="tablewrap">{{ it.info.preview.to_html(index=False, border=0, classes="data")|safe }}</div></div>
+      </details>
+    {% endif %}
+  {% endfor %}
+</section>
+{% endmacro %}
+
+{# The per-file column choices, inside the caller's own submit form. #}
+{% macro configure_fields(items, number=2, title="Check how it is read") %}
+{% if items %}
+<section class="step card">
+  <h2><span class="n">{{ number }}</span> {{ title }}</h2>
+  {% for it in items %}
+    {% if it.fields %}
+      {{ fieldset(it.fields, it.prefix, legend=(it.name if items|length > 1 else None)) }}
+    {% endif %}
+  {% endfor %}
+</section>
+{% endif %}
+{% endmacro %}

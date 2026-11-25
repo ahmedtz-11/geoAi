@@ -1,0 +1,37 @@
+{% extends "app/layout.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>Workbench</h1>
+<p class="lede">Tools to help find underground minerals, with a focus on gold. Use whichever sections you
+have data for; the last one combines them. Your results stay here, so you can come back to them.</p>
+
+<div class="secgrid">
+  {% for s in app_sections %}
+    <div class="seccard {{ '' if s.open else 'locked' }}">
+      <h3><span>{{ s.icon }}</span> {{ s.title }}
+        {% if s.has_result %}<span class="tag ok">has results</span>{% endif %}</h3>
+      <p>{{ s.blurb }}</p>
+      <div class="go">
+        {% if s.open %}
+          <a class="btn sm" href="{{ url_for(s.endpoint) }}">{{ "Open" if not s.has_result else "See results" }}</a>
+        {% else %}
+          <a class="btn sec sm" href="{{ url_for('billing.pricing') }}">🔒 Comes with a higher plan</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<h2>Your work</h2>
+<div class="card">
+  {% if storage %}
+    <p class="small muted">Uploads and results are kept on the server so you can return to them, and so
+      section 6 can combine work done on different days. {{ storage }} in use.</p>
+  {% endif %}
+  <p class="small muted">Everything here belongs to your account alone. The pit register is the one thing
+    shared across runs, because its whole purpose is to build up over time.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

@@ -1,0 +1,8 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="fig imgwrap">
+  <img src="{{ fig_url('overview') }}" alt="Every magnetic map" loading="lazy">
+</div>
+{{ dlbar([("Overview PNG", dl("png", "overview")),
+          ("All maps (ZIP of PNGs + multi-band GeoTIFF)", dl("zip", "maps"))]) }}
+<p class="hint">Every map at a glance. Open a tab above for the full-size version, the numbers behind it
+and its own download.</p>

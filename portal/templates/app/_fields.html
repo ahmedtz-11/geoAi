@@ -1,0 +1,79 @@
+{# One macro renders every control in the workbench, from the descriptors in portal/app/uploads.py. #}
+
+{% macro control(f, prefix="") %}
+  {%- set name = prefix ~ f.name -%}
+  {%- if f.kind == "note" -%}
+    <p class="hint">{{ f.value }}</p>
+  {%- elif f.kind == "check" -%}
+    <div class="inline">
+      <input type="checkbox" id="{{ name }}" name="{{ name }}" value="1" {{ "checked" if f.value }}>
+      <label for="{{ name }}">{{ f.label }}</label>
+    </div>
+    {% if f.help %}<p class="hint">{{ f.help }}</p>{% endif %}
+  {%- elif f.kind == "radio" -%}
+    <label>{{ f.label }}</label>
+    <div class="inline" style="flex-wrap:wrap;gap:1rem">
+      {% for o in f.options %}
+        <span class="inline" style="margin:0">
+          <input type="radio" id="{{ name }}-{{ loop.index }}" name="{{ name }}" value="{{ o }}"
+                 {{ "checked" if o == f.value }}>
+          <label for="{{ name }}-{{ loop.index }}">{{ o }}</label>
+        </span>
+      {% endfor %}
+    </div>
+    {% if f.help %}<p class="hint">{{ f.help }}</p>{% endif %}
+  {%- elif f.kind == "multi" -%}
+    <label for="{{ name }}">{{ f.label }}</label>
+    <select id="{{ name }}" name="{{ name }}" multiple size="{{ [f.options|length, 6]|min }}">
+      {% for o in f.options %}<option value="{{ o }}" {{ "selected" if o in (f.value or []) }}>{{ o }}</option>{% endfor %}
+    </select>
+    <p class="hint">{{ f.help or "Hold Ctrl (⌘ on a Mac) to choose more than one." }}</p>
+  {%- elif f.kind == "crs" -%}
+    <label for="{{ name }}">{{ f.label }}</label>
+    <select id="{{ name }}" name="{{ name }}" data-crs="{{ name }}">
+      {% for o in f.options %}<option value="{{ o }}" {{ "selected" if o == f.value }}>{{ o }}</option>{% endfor %}
+    </select>
+    <input type="number" name="{{ name }}_epsg" value="32736" min="1024" max="999999"
+           class="crs-epsg" hidden placeholder="EPSG code">
+    {% if f.help %}<p class="hint">{{ f.help }}</p>{% endif %}
+  {%- elif f.kind == "number" -%}
+    <label for="{{ name }}">{{ f.label }}</label>
+    <input type="number" id="{{ name }}" name="{{ name }}" value="{{ f.value }}"
+           {% if f.min is defined %}min="{{ f.min }}"{% endif %}
+           {% if f.max is defined %}max="{{ f.max }}"{% endif %}
+           step="{{ f.step | default('any') }}">
+    {% if f.help %}<p class="hint">{{ f.help }}</p>{% endif %}
+  {%- elif f.kind == "text" -%}
+    <label for="{{ name }}">{{ f.label }}</label>
+    <input type="text" id="{{ name }}" name="{{ name }}" value="{{ f.value or '' }}">
+    {% if f.help %}<p class="hint">{{ f.help }}</p>{% endif %}
+  {%- elif f.kind == "range" -%}
+    <label for="{{ name }}">{{ f.label }} <output class="muted">{{ f.value }}</output></label>
+    <input type="range" id="{{ name }}" name="{{ name }}" value="{{ f.value }}"
+           min="{{ f.min }}" max="{{ f.max }}" step="{{ f.step | default(1) }}"
+           oninput="this.previousElementSibling.querySelector('output').textContent=this.value">
+    {% if f.help %}<p class="hint">{{ f.help }}</p>{% endif %}
+  {%- else -%}
+    <label for="{{ name }}">{{ f.label }}</label>
+    <select id="{{ name }}" name="{{ name }}" {{ 'data-reload="1"' if f.reload }}>
+      {% for o in f.options %}<option value="{{ o }}" {{ "selected" if o == f.value }}>{{ o }}</option>{% endfor %}
+    </select>
+    {% if f.help %}<p class="hint">{{ f.help }}</p>{% endif %}
+  {%- endif -%}
+{% endmacro %}
+
+{# A list of fields laid out on a grid, honouring each one's width. #}
+{% macro fieldset(fields, prefix="", legend=None) %}
+  {% if legend %}<fieldset><legend>{{ legend }}</legend>{% endif %}
+  <div class="fieldgrid">
+    {% for f in fields %}
+      <div class="field w-{{ f.width or 'half' }}"
+           {% if f.only %}data-only="{{ f.only }}"{% endif %}
+           {% if f.needs %}data-needs="{{ f.needs }}"{% endif %}
+           {% if f.needs_not %}data-needs-not="{{ f.needs_not }}"{% endif %}>
+        {{ control(f, prefix) }}
+      </div>
+    {% endfor %}
+  </div>
+  {% if legend %}</fieldset>{% endif %}
+{% endmacro %}

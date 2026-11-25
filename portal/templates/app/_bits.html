@@ -1,0 +1,32 @@
+{# Small pieces used all over the workbench. #}
+
+{% macro stats(arr, unit="") %}
+  {% set rows = arr | grid_stats(unit) %}
+  {% if rows %}
+    <dl>{% for label, value in rows %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+  {% endif %}
+{% endmacro %}
+
+{% macro dlbar(links) %}
+  {% if current_user.may_download() %}
+    <div class="figbar">
+      {% for label, href in links %}
+        {% if href %}<a class="btn sec sm" href="{{ href }}">⬇ {{ label }}</a>{% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="hint">Downloads come with a paid plan. <a href="{{ url_for('billing.pricing') }}">See plans</a>.</p>
+  {% endif %}
+{% endmacro %}
+
+{% macro metrics(items) %}
+  <div class="grid g4" style="margin:.4rem 0 1rem">
+    {% for label, value in items %}
+      <div class="stat"><div class="n">{{ value }}</div><div class="l">{{ label }}</div></div>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% macro scrolltable(html) %}
+  <div class="tablewrap">{{ html }}</div>
+{% endmacro %}

@@ -1,0 +1,7 @@
+{% from "app/_bits.html" import dlbar with context %}
+{% if not A.has_depth %}
+  <p class="note warn">Add a pit depth column to see the long section and where the ore gets deeper.</p>
+{% else %}
+  <div class="fig imgwrap"><img src="{{ fig_url('section') }}" alt="Long section" loading="lazy"></div>
+  {{ dlbar([("Long section (PNG)", dl("png", "section"))]) }}
+{% endif %}

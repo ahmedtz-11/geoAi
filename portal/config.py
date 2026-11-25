@@ -12,15 +12,12 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
-    # where the Streamlit app is served from, as the browser sees it
-    APP_PATH = os.environ.get("GEOAI_APP_PATH", "/app")
-    # Set only when running on your own machine, where Streamlit is a separate address and there is no
-    # nginx to pass the token. Unset on the VPS, which is what keeps tokens out of URLs there.
-    APP_URL = os.environ.get("GEOAI_APP_URL", "")
-    # how long a gate token is good for: long enough to open the app, short enough to be useless if copied
-    TOKEN_SECONDS = int(os.environ.get("GEOAI_TOKEN_SECONDS", "60"))
-    # how long a signed-in Streamlit session stays valid before the browser must pass the gate again
-    SESSION_HOURS = int(os.environ.get("GEOAI_SESSION_HOURS", "12"))
+    # where a person's uploads and results are kept (portal/app/store.py)
+    DATA_DIR = str(DATA)
+    # the biggest upload the app accepts; a GeoTIFF of a whole licence block is the usual worst case
+    MAX_CONTENT_LENGTH = int(os.environ.get("GEOAI_MAX_UPLOAD_MB", "200")) * 1024 * 1024
+    # how many finished runs of each section to keep per person before the oldest is dropped
+    KEEP_RUNS = int(os.environ.get("GEOAI_KEEP_RUNS", "5"))
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

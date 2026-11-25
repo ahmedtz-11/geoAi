@@ -1,0 +1,31 @@
+{% from "app/_bits.html" import dlbar with context %}
+{% if items|length > 1 %}
+  <form class="figbar" data-panel-form="pr-remote"
+        action="{{ url_for('app.prediction_panel', name='remote', _pick=1, use=request.args.getlist('use')) }}">
+    {% for u in request.args.getlist('use') %}<input type="hidden" name="use" value="{{ u }}">{% endfor %}
+    <input type="hidden" name="_pick" value="1">
+    <label for="ds" style="margin:0">Dataset</label>
+    <select id="ds" name="ds" style="width:auto">
+      {% for it in items %}<option value="{{ loop.index0 }}" {{ "selected" if loop.index0 == i }}>{{ it.name }}</option>{% endfor %}
+    </select>
+  </form>
+{% endif %}
+{% if ds.kind == "image_ref" %}
+  <div class="fig imgwrap"><img src="{{ fig_url('rslayer-' ~ i ~ '-image') }}" alt="{{ ds.name }}" loading="lazy"></div>
+{% else %}
+  {% for L in layers %}
+    <div class="figrow">
+      <div><div class="fig imgwrap"><img src="{{ fig_url(L.fig) }}" alt="{{ L.name }}" loading="lazy"></div>
+        {{ dlbar([("PNG", dl("png", L.fig))]) }}</div>
+      <div class="fignote"><p><strong>{{ L.name }}</strong></p>
+        {% if L.median is not none %}
+          <dl><dt>Median</dt><dd>{{ "%.3g"|format(L.median) }}</dd>
+            <dt>95th percentile</dt><dd>{{ "%.3g"|format(L.p95) }}</dd>
+            <dt>Maximum</dt><dd>{{ "%.3g"|format(L.max) }}</dd></dl>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+<p class="hint">Each layer becomes an evidence layer on the Gold prediction tab — high values
+favourable by default; change the direction there if low values are favourable.</p>

@@ -1,0 +1,96 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+<p class="hint">Each evidence layer is scaled from 0 (unfavourable) to 1 (favourable). Set how much
+each one counts — 0 ignores it — and whether high or low values are favourable for gold.</p>
+
+<form class="card" data-panel-form="pr-gold"
+      action="{{ url_for('app.prediction_panel', name='gold', _pick=1, use=request.args.getlist('use')) }}">
+  <input type="hidden" name="_p" value="1">
+  {% for u in request.args.getlist('use') %}<input type="hidden" name="use" value="{{ u }}">{% endfor %}
+  <input type="hidden" name="_pick" value="1">
+  <div class="tablewrap" style="max-height:none">
+    <table class="data"><thead><tr><th>Evidence layer</th><th style="width:220px">Weight</th>
+      <th style="width:170px">Favourable values</th></tr></thead><tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.name }}<br><span class="muted small">{{ r.source }} · {{ r.info }}</span></td>
+          <td><input type="range" name="{{ r.wkey }}" value="{{ r.w }}" min="0" max="1" step="0.1">
+            <output class="muted">{{ r.w }}</output></td>
+          <td>
+            {% for d in ["High", "Low"] %}
+              <span class="inline" style="margin:0 .6rem 0 0">
+                <input type="radio" id="{{ r.dkey }}-{{ d }}" name="{{ r.dkey }}" value="{{ d }}"
+                       {{ "checked" if d == r.dir }}>
+                <label for="{{ r.dkey }}-{{ d }}">{{ d }}</label></span>
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody></table>
+  </div>
+  <div class="fieldgrid" style="margin-top:1rem">
+    <div class="field w-half"><label>Prediction method</label>
+      {% for m in methods %}
+        <span class="inline" style="margin:.2rem 0">
+          <input type="radio" id="pm{{ loop.index }}" name="method" value="{{ m }}"
+                 {{ "checked" if m == opts.method }}>
+          <label for="pm{{ loop.index }}">{{ m }}</label></span>
+      {% endfor %}
+      <p class="hint">Knowledge-driven uses your weights. Data-driven learns from where the
+        gold-anomalous soil samples are, using the other layers. Average combines both.</p></div>
+    <div class="field w-quarter">
+      <label for="pr-top">Top % as targets <output class="muted">{{ opts.top }}</output></label>
+      <input type="range" id="pr-top" name="top" value="{{ opts.top }}" min="1" max="20" step="0.5"></div>
+    <div class="field w-quarter">
+      <label for="pr-ha">Smallest target (ha) <output class="muted">{{ opts.min_ha }}</output></label>
+      <input type="range" id="pr-ha" name="min_ha" value="{{ opts.min_ha }}" min="0" max="20" step="0.5"></div>
+  </div>
+</form>
+
+{% if empty %}
+  <p class="note warn">{{ message }}</p>
+{% else %}
+  {{ metrics([("Targets", targets|length), ("Target area", "{:,.1f} ha".format(target_ha))]
+             + ([("Random Forest skill (AUC)", "%.2f"|format(pred.rf.auc))]
+                if pred.rf and pred.rf.get("auc") is not none else [])) }}
+  <div class="figrow">
+    <div>
+      <div class="fig imgwrap"><img src="{{ fig_url('prospectivity') }}" alt="Gold prospectivity" loading="lazy"></div>
+      {{ dlbar([("Map (PNG)", dl("png", "prospectivity")),
+                ("Targets (CSV)", dl("csv", "targets")),
+                ("Prediction + evidence (GeoTIFF)", dl("tif", "prediction")),
+                ("Report (HTML)", dl("html", "report"))]) }}
+    </div>
+    <div>
+      <p><strong>Ranked targets</strong></p>
+      {% if short %}<div class="tablewrap">{{ short }}</div>
+      {% else %}<p class="note warn">No targets; lower the smallest target size.</p>{% endif %}
+    </div>
+  </div>
+  {% if full %}
+    <details class="adv" open><summary>Target details (depth source, trend source, supporting evidence)</summary>
+      <div class="inner"><div class="tablewrap">{{ full }}</div></div></details>
+  {% endif %}
+
+  {% if pred.rf and pred.rf.get("importances") %}
+    <h4>Random Forest</h4>
+    <p class="hint">Trained on {{ pred.rf.n_pos }} gold-anomalous and {{ pred.rf.n_neg }} background
+      samples from {{ pred.rf_source }}.</p>
+    <div class="figrow">
+      <div><div class="fig imgwrap"><img src="{{ fig_url('rf-probability') }}" alt="Random Forest probability" loading="lazy"></div></div>
+      <div><div class="fig imgwrap"><img src="{{ fig_url('rf-importance') }}" alt="Feature importance" loading="lazy"></div>
+        {% if pred.rf.auc is not none and pred.rf.auc < 0.65 %}
+          <p class="note warn">Weak skill: the evidence layers do not explain where the gold samples
+            are anomalous.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% elif pred.rf and pred.rf.get("error") %}
+    <p class="note warn">Random Forest not available: {{ pred.rf.error }}</p>
+  {% endif %}
+
+  {% if used %}
+    <h4>Evidence layers used <span class="muted small">(0 = unfavourable, 1 = favourable)</span></h4>
+    <div class="fig imgwrap"><img src="{{ fig_url('evidence') }}" alt="Evidence layers" loading="lazy"></div>
+    {{ dlbar([("Evidence (PNG)", dl("png", "evidence"))]) }}
+  {% endif %}
+{% endif %}

@@ -1,0 +1,61 @@
+{% from "app/_bits.html" import dlbar with context %}
+
+{% for e in errors %}<p class="note err">{{ e }}</p>{% endfor %}
+
+{% if has_inversions %}
+  <p class="hint">For every line: the <strong>Inverse Model Resistivity Section</strong> above the
+    <strong>Inverse Model Chargeability Section</strong>, on the same distance and depth axes so they
+    can be compared directly.</p>
+{% else %}
+  <p class="note warn">Inverse model sections need files with electrode positions — a Res2DInv
+    <code>.dat</code>, or Tx1, Tx2, Rx1, Rx2 columns as exported by IRIS Prosys. These files have none,
+    so the measured pseudosection is shown instead.</p>
+{% endif %}
+
+<form class="figbar" data-panel-form="ip-sections"
+      action="{{ url_for('app.ip_sections', run=run.id) }}">
+  <label for="ip-pct" style="margin:0">
+    {{ "Chargeability outline" if has_inversions else "Anomaly outline" }} (percentile)</label>
+  <input type="range" id="ip-pct" name="pct" value="{{ pct }}" min="50" max="99" style="width:190px">
+  <output>{{ pct }}</output>
+  {% if not has_inversions %}
+    <label for="ip-stretch" style="margin:0 0 0 1rem">Colour stretch (upper percentile)</label>
+    <input type="range" id="ip-stretch" name="stretch" value="{{ stretch }}" min="80" max="100"
+           step="0.5" style="width:190px">
+    <output>{{ stretch }}</output>
+  {% endif %}
+</form>
+<p class="hint">The black line encloses values above this percentile of all lines together.{% if not
+  has_inversions %} Lower the colour stretch when a few extreme readings make the rest one colour.{% endif %}</p>
+
+{% if not blocks %}
+  <p class="note warn">No line could be processed. Check the column choices and the quality filters.</p>
+{% endif %}
+
+{% for b in blocks %}
+  <div class="card">
+    <h3 style="margin:.1rem 0 .8rem">Line {{ b.line }}</h3>
+    {% for img in b.images %}
+      <div class="fig imgwrap" style="margin-bottom:.4rem">
+        <img src="{{ url_for('app.figure', section_key='ip', run_id=run.id, name=img.fig) }}"
+             alt="{{ img.kind }} section for line {{ b.line }}" loading="lazy">
+      </div>
+      <div class="figrow" style="align-items:center;margin-bottom:1rem">
+        <p class="fignote" style="margin:0">{{ img.text|safe }}</p>
+        {{ dlbar([("PNG", url_for('app.download', section_key='ip', run_id=run.id, kind='png',
+                                  name=img.fig))]) }}
+      </div>
+    {% endfor %}
+  </div>
+{% endfor %}
+
+{% if blocks %}
+  {{ dlbar([("All sections (ZIP)", url_for('app.download', section_key='ip', run_id=run.id,
+                                           kind='zip', name='sections', pct=pct, stretch=stretch))]) }}
+{% endif %}
+
+<p class="hint">High chargeability usually means disseminated sulphides (pyrite, arsenopyrite), often
+linked to gold, but graphite also responds; compare it with the resistivity and the geology. The
+inverse model section is a smoothness-constrained inversion using half-space sensitivities
+(Loke &amp; Barker, 1995). Res2DInv also inverts resistivity and updates its sensitivities for it, so
+its section will differ in detail — most where the ground resistivity changes sharply.</p>

@@ -1,0 +1,5 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="tablewrap">{{ table }}</div>
+{{ dlbar([("Pit ratings (CSV)", dl("csv", "pits"))]) }}
+<p class="hint"><strong>High</strong>: on the trend, good grade here or next door, and room left below
+the pit. <strong>Low</strong>: off the trend, poor grade, or recorded as worked out.</p>

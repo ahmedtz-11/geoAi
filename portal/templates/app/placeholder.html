@@ -1,0 +1,11 @@
+{% extends "app/layout.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+{% block main %}
+<h1>{{ section.title }}</h1>
+<p class="lede">{{ section.blurb }}</p>
+<div class="card empty">
+  <div class="big">{{ section.icon }}</div>
+  <p>This section is being moved over from the old interface. It will be here shortly.</p>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

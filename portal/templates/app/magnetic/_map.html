@@ -1,0 +1,22 @@
+{% from "app/_bits.html" import stats, dlbar with context %}
+<div class="figrow">
+  <div>
+    {% if height is defined %}
+      <form class="figbar" data-panel-form="mag-upward"
+            action="{{ url_for('app.magnetic_panel', name='upward', view=use, run=run.id) }}">
+        <label for="up-h" style="margin:0">Continuation height (m)</label>
+        <input type="range" id="up-h" name="h" value="{{ height }}" min="10" max="2000" step="10"
+               style="width:240px">
+        <output>{{ "{:,}".format(height) }}</output>
+      </form>
+    {% endif %}
+    <div class="fig imgwrap">
+      <img src="{{ fig_url(figname) }}" alt="{{ title }}" loading="lazy">
+    </div>
+    {{ dlbar([("PNG", dl("png", figname)), ("GeoTIFF", dl("tif", title|lower))]) }}
+  </div>
+  <div class="fignote">
+    <p>{{ info }}</p>
+    {{ stats(arr, unit) }}
+  </div>
+</div>

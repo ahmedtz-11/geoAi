@@ -1,0 +1,41 @@
+{% from "app/_bits.html" import dlbar with context %}
+<p class="hint">Principal Component Analysis turns correlated bands into uncorrelated components. PC1
+holds overall brightness and topography; the later PCs hold the subtle spectral differences between
+rocks, soils and alteration minerals.</p>
+<form class="figbar" data-panel-form="rs-pca"
+      action="{{ url_for('app.remote_panel', name='pca', run=run.id, **aoi_q) }}">
+  <input type="hidden" name="_t" value="1">
+  <label for="combo" style="margin:0">PCA colour composite (R-G-B)</label>
+  <select id="combo" name="combo" style="width:auto">
+    {% for c in combos %}<option value="{{ c }}" {{ "selected" if c == combo }}>{{ c }}</option>{% endfor %}
+  </select>
+</form>
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('pca-rgb', **q) }}" alt="PCA composite" loading="lazy"></div>
+    {{ dlbar([("Composite PNG", dl("png", "pca-rgb", **q)), ("Composite GeoTIFF", dl("tif", "pca-rgb", **q))]) }}
+  </div>
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('pca-loadings') }}" alt="PCA loadings" loading="lazy"></div>
+    <p class="hint">Each row shows how much each band contributes to a PC. A PC with large opposite
+      loadings on two bands highlights materials that differ between those bands.</p>
+  </div>
+</div>
+<h4>Principal component images</h4>
+<div class="fig imgwrap"><img src="{{ fig_url('pca-all') }}" alt="All principal components" loading="lazy"></div>
+{{ dlbar([("Components PNG", dl("png", "pca-all")), ("All PCs (GeoTIFF)", dl("tif", "pca-all"))]) }}
+
+<h4>Crósta technique: mineral-specific PCs <span class="muted small">(bright = target mineral group)</span></h4>
+<div class="figrow" style="grid-template-columns:1fr 1fr">
+  {% for kind in ["hydroxyl", "iron"] %}
+    <div>
+      {% if crostas[kind].error %}
+        <p class="note warn">{{ crostas[kind].error }}</p>
+      {% else %}
+        <div class="fig imgwrap"><img src="{{ fig_url('crosta-' ~ kind) }}" alt="Crósta {{ kind }}" loading="lazy"></div>
+        <p class="hint">{{ crostas[kind].cr.info }}</p>
+        <div class="tablewrap">{{ crostas[kind].table }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>

@@ -1,0 +1,44 @@
+{% from "app/_bits.html" import dlbar with context %}
+<p class="hint">Band ratios divide one band by another. This cancels most of the brightness changes
+  caused by topography and shadow, and leaves the colour differences produced by minerals.</p>
+<form class="card" data-panel-form="rs-ratios"
+  action="{{ url_for('app.remote_panel', name='ratios', run=run.id, **aoi_q) }}">
+  <input type="hidden" name="_t" value="1">
+  <div class="fieldgrid">
+    <div class="field w-half"><label for="preset">Ratio colour composite</label>
+      <select id="preset" name="preset">
+        {% for p in presets %}<option value="{{ p }}" {{ "selected" if p==preset }}>{{ p }}</option>{% endfor %}
+      </select>
+    </div>
+    {% if preset == "Custom" %}
+    {% for ch, lbl in [("r", "Red"), ("g", "Green"), ("b", "Blue")] %}
+    <div class="field w-quarter"><label for="ch-{{ ch }}">{{ lbl }}</label>
+      <select id="ch-{{ ch }}" name="{{ ch }}">
+        {% for k in keys %}<option value="{{ k }}" {{ "selected" if k==rgb_map[ch] }}>{{ k }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+</form>
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('ratio-rgb', **q) }}" alt="Ratio composite" loading="lazy"></div>
+    {{ dlbar([("Composite PNG", dl("png", "ratio-rgb", **q)),
+    ("Composite GeoTIFF", dl("tif", "ratio-rgb", **q))]) }}
+  </div>
+  <div class="fignote">
+    <p><strong>How to read it</strong></p>
+    <ul>
+      <li>In <strong>Sabins</strong> and <strong>Alteration</strong> composites, red/magenta = clay
+        (B11/B12), green/yellow = iron oxide (B4/B2). Yellow-white areas have both: the strongest
+        alteration signal.</li>
+      <li>In <strong>Kaufmann</strong>, vegetation is green and altered rock pink to red.</li>
+      <li>Use <strong>Custom</strong> to build any combination.</li>
+    </ul>
+  </div>
+</div>
+<h4>All band ratio images <span class="muted small">(cloud and no-data masked)</span></h4>
+<div class="fig imgwrap"><img src="{{ fig_url('ratio-all') }}" alt="All band ratios" loading="lazy"></div>
+{{ dlbar([("All ratios (PNG)", dl("png", "ratio-all")),
+("All ratios (GeoTIFF, one band each)", dl("tif", "ratio-all"))]) }}

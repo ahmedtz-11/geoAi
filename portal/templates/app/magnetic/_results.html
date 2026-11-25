@@ -1,0 +1,67 @@
+{# The results half of the magnetic page: image type, the processing line, and the twelve maps. #}
+<h2 id="results">Maps</h2>
+
+{% if broken %}
+  <p class="note err">That dataset could not be processed as magnetics.</p>
+{% else %}
+
+<div class="runbar">
+  <span>✅ {{ run.meta().get("files", ["results"])|join(", ") }}</span>
+  <span class="muted">{{ run.meta().get("seconds", 0) }}s</span>
+  <span class="sp">
+    {% if history|length > 1 %}
+      <form method="get" style="display:inline">
+        <select name="run" onchange="this.form.submit()" style="width:auto;padding:.25rem .4rem;font-size:.85rem">
+          {% for h in history %}
+            <option value="{{ h.id }}" {{ "selected" if h.id == run.id }}>
+              {{ h.meta().get("files", [h.id])|join(", ") }} — {{ h.id[:8] }}</option>
+          {% endfor %}
+        </select>
+        {% if request.args.get('view') %}<input type="hidden" name="view" value="{{ request.args.get('view') }}">{% endif %}
+      </form>
+    {% endif %}
+    <form method="post" action="{{ url_for('app.delete_run', section_key='magnetic', run_id=run.id) }}"
+          style="display:inline" onsubmit="return confirm('Clear these results?')">
+      <button class="btn sec sm" type="submit">Clear results</button>
+    </form>
+  </span>
+</div>
+
+{% if both_views %}
+  <div class="figbar">
+    <span class="small muted">Image type</span>
+    <span class="seg">
+      {% for v in views %}
+        {% set vv = v|lower %}
+        <a class="btn sec sm" style="border:0;border-radius:0;{{ 'background:var(--gold);color:#fff;font-weight:600' if vv == use }}"
+           href="{{ url_for('app.magnetic', view=vv, run=run.id) }}#results">{{ v }}</a>
+      {% endfor %}
+    </span>
+    <span class="hint" style="margin:0">
+      <strong>Normal</strong>: the readings gridded as they are, in the original colours; ground between
+      survey lines that no reading reaches stays blank.
+      <strong>Filled</strong>: spikes removed, a continuous surface across the whole survey, drawn the way
+      Oasis montaj draws it. Applies to every map below and to the downloads.
+    </span>
+  </div>
+{% else %}
+  <p class="hint">This file is already a grid, so there is one image type.</p>
+{% endif %}
+
+{% if from_image %}
+  <p class="note warn">Values come from the colours of a picture, so they are a relative 0–1 scale and
+    not nT. Trends are usable; depths are not reliable.</p>
+{% endif %}
+
+<p class="hint">{{ summary }}</p>
+
+<div class="tabs" data-group="magnetic" role="tablist">
+  {% for label, name in tabs %}
+    <button type="button" role="tab" data-panel="mag-{{ name }}">{{ label }}</button>
+  {% endfor %}
+</div>
+{% for label, name in tabs %}
+  <div class="panel" id="mag-{{ name }}" role="tabpanel" hidden
+       data-lazy="{{ url_for('app.magnetic_panel', name=name, view=use, run=run.id) }}"></div>
+{% endfor %}
+{% endif %}

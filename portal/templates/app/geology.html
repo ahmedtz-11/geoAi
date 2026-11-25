@@ -1,0 +1,131 @@
+{% extends "app/layout.html" %}
+{% from "app/_upload.html" import upload_step with context %}
+{% from "app/_fields.html" import fieldset with context %}
+{% from "app/_bits.html" import metrics with context %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>4 · Geology</h1>
+<p class="lede">Structural measurements from the field and / or a QDS geological map sheet. GeoAI settles
+which way each plane dips, separates the readings into structural sets, works out where those sets
+cross — the line an ore shoot usually follows — and keeps everything for the integrated prediction.
+Upload either input, or both.</p>
+
+{% if running %}
+  <div class="runbar"><span class="spin"></span> A run is in progress.
+    <span class="sp"><a class="btn sec sm" href="{{ url_for('app.wait', section_key='geology', job_id=running.id) }}">Watch it</a></span>
+  </div>
+{% endif %}
+
+{{ upload_step(items, section, 1, "Upload", multiple=True,
+   note="Structural measurements (CSV or Excel) — one row per reading: position, strike, dip, and the
+   dip direction if you recorded it. And / or a QDS sheet (PNG, JPG or GeoTIFF). A GeoTIFF brings its
+   own coordinates; a picture needs its edges typed in. Samples:
+   sample_data/structure_measurements.csv and sample_data/qds_sheet.png.") }}
+
+<form method="post" action="{{ url_for('app.geology') }}">
+  <input type="hidden" name="do" value="submit">
+
+  {% if tform %}
+    <section class="step card">
+      <h2><span class="n">2</span> The measurements</h2>
+      {% if tform.error %}
+        <p class="note err">{{ tform.error }}</p>
+      {% else %}
+        {{ fieldset(tform.fields) }}
+        <p class="hint">{{ "{:,}".format(tform.usable) }} of {{ "{:,}".format(tform.rows) }} rows have
+          both a strike and a dip.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if sform %}
+    <section class="step card">
+      <h2><span class="n">{{ 3 if tform else 2 }}</span> The QDS sheet</h2>
+      {% if sform.error %}
+        <p class="note err">{{ sform.error }}</p>
+      {% elif sform.kind == "raster" %}
+        <p class="note ok">GeoTIFF · {{ sform.layers|length }} band(s)
+          {%- if sform.shape %} · {{ sform.shape[1] }}×{{ sform.shape[0] }} cells{% endif %}
+          {%- if sform.epsg %} · EPSG:{{ sform.epsg }}{% endif %}.</p>
+        {% if not sform.epsg %}
+          <p class="note warn">This GeoTIFF has no EPSG code, so it may not line up with the
+            measurements.</p>
+        {% endif %}
+      {% else %}
+        <p class="hint">A picture carries no coordinates, so give the sheet's edges — {{ sform.why }}.</p>
+        {{ fieldset(sform.fields) }}
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if tform or sform %}
+    <section class="step card">
+      <h2><span class="n">{{ (tform and sform) and 4 or 3 }}</span> Submit</h2>
+      <div class="actions">
+        <button class="btn" type="submit" {{ "disabled" if running }}>🚀 Submit &amp; interpret</button>
+      </div>
+    </section>
+  {% endif %}
+</form>
+
+{% if not items and not run %}
+  <div class="card empty"><div class="big">🪨</div>
+    <p>Upload your measurements, the QDS sheet, or both.</p></div>
+{% endif %}
+
+{% if run and analysis %}
+  <h2 id="results">Overview and interpretation</h2>
+  <div class="runbar">
+    <span>✅ {{ run.meta().get("files", [])|join(", ") }}</span>
+    <span class="sp">
+      <form method="post" action="{{ url_for('app.delete_run', section_key='geology', run_id=run.id) }}"
+            onsubmit="return confirm('Clear these results?')">
+        <button class="btn sec sm" type="submit">Clear results</button>
+      </form>
+    </span>
+  </div>
+  {% for e in analysis.errors %}<p class="note warn">{{ e }}</p>{% endfor %}
+
+  {% if analysis.sheet_only %}
+    <p class="note warn">Only the map sheet was uploaded, so there is nothing to interpret from
+      measurements. The sheet is shown below and is kept as the background for section 6.</p>
+  {% else %}
+    <form method="get" class="figbar">
+      <label for="sets" style="margin:0">Most structural sets to look for
+        <output class="muted">{{ max_sets }}</output></label>
+      <input type="range" id="sets" name="sets" value="{{ max_sets }}" min="1" max="4"
+             onchange="this.form.submit()" style="width:150px">
+      <input type="hidden" name="run" value="{{ run.id }}">
+    </form>
+    <p class="hint">Sets are found by clustering the poles to the planes. A set needs at least three
+      readings, so a small survey may give fewer than you ask for.</p>
+
+    {{ metrics([("Readings used", "%d of %d"|format(analysis.n_used, analysis.n_total)),
+                ("Stations", analysis.spread.stations),
+                ("Structural sets", analysis.sets|length),
+                ("Main set", (analysis.sets and "%.0f°/%.0f°"|format(analysis.sets[0].strike, analysis.sets[0].dip)) or "—"),
+                ("Shoot plunge", (analysis.inters and "%.0f° → %.0f°"|format(analysis.inters[0].plunge, analysis.inters[0].trend)) or "—")]) }}
+
+    <div class="card">
+      <h3 style="margin-top:0">Interpretation</h3>
+      <ul>{% for line in analysis.narrative %}<li>{{ line|safe }}</li>{% endfor %}</ul>
+      <p class="hint">Structural measurements say where gold could be trapped, not whether it is there.
+        Test these directions against the soil anomalies and the geophysics before committing to a
+        drill hole.</p>
+    </div>
+  {% endif %}
+
+  <div class="tabs" data-group="geology" role="tablist">
+    {% for label, name in tabs %}
+      <button type="button" role="tab" data-panel="gl-{{ name }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+  {% for label, name in tabs %}
+    <div class="panel" id="gl-{{ name }}" role="tabpanel" hidden
+         data-lazy="{{ url_for('app.geology_panel', name=name, run=run.id, sets=max_sets) }}"></div>
+  {% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

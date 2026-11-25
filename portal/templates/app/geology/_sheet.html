@@ -1,0 +1,9 @@
+{% from "app/_bits.html" import dlbar with context %}
+{% if not A.bg %}
+  <p class="note warn">No QDS map sheet was uploaded.</p>
+{% else %}
+  <div class="fig imgwrap"><img src="{{ fig_url('sheet') }}" alt="QDS sheet" loading="lazy"></div>
+  {{ dlbar([("Sheet (PNG)", dl("png", "sheet"))]) }}
+  <p class="hint">Your measurement stations are drawn on the sheet, so you can check that its edges
+    were entered correctly.</p>
+{% endif %}

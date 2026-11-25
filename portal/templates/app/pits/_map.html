@@ -1,0 +1,5 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="fig imgwrap"><img src="{{ fig_url('map') }}" alt="Pit map" loading="lazy"></div>
+{{ dlbar([("Map (PNG)", dl("png", "map")), ("Google Earth (KML)", dl("kml", "pits"))]) }}
+<p class="hint">Circle size follows gold grade. The yellow band is the mineralised corridor; stars are
+the proposed pits.</p>

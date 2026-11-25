@@ -1,0 +1,82 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+<p class="hint">Combines the evidence for gold into one map. Each layer is scaled from 0
+(unfavourable) to 1 (most favourable), weighted, and summed. The brightest ground has alteration,
+structure and favourable rock together: the best places to start field checks.</p>
+
+<form class="card" data-panel-form="rs-prospectivity"
+      action="{{ url_for('app.remote_panel', name='prospectivity', run=run.id, **aoi_q) }}">
+  <input type="hidden" name="_t" value="1">
+  <p class="hint" style="margin-top:0"><strong>Evidence weights</strong> (0 = ignore)</p>
+  <div class="fieldgrid">
+    {% for k, d in layers.items() %}
+      <div class="field w-quarter">
+        <label for="w-{{ k }}">{{ d[0] }} <output class="muted">{{ o.w[k] }}</output></label>
+        <input type="range" id="w-{{ k }}" name="w_{{ k }}" value="{{ o.w[k] }}" min="0" max="1" step="0.1">
+      </div>
+    {% endfor %}
+    <div class="field w-quarter"><label>Combine by</label>
+      {% for m in ["Weighted sum", "Fuzzy gamma"] %}
+        <span class="inline" style="margin:.2rem 0">
+          <input type="radio" id="pm{{ loop.index }}" name="method" value="{{ m }}"
+                 {{ "checked" if m == o.method }}>
+          <label for="pm{{ loop.index }}">{{ m }}</label></span>
+      {% endfor %}
+      <p class="hint">Weighted sum averages the evidence. Fuzzy gamma rewards places where several
+        layers are high at once.</p>
+    </div>
+    {% if o.method == "Fuzzy gamma" %}
+      <div class="field w-quarter">
+        <label for="gamma">Gamma <output class="muted">{{ o.gamma }}</output></label>
+        <input type="range" id="gamma" name="gamma" value="{{ o.gamma }}" min="0.5" max="0.95" step="0.05">
+      </div>
+    {% endif %}
+    <div class="field w-quarter">
+      <label for="p-top">Top % as targets <output class="muted">{{ o.top }}</output></label>
+      <input type="range" id="p-top" name="top" value="{{ o.top }}" min="1" max="20" step="0.5"></div>
+    <div class="field w-quarter">
+      <label for="p-ha">Smallest target (ha) <output class="muted">{{ o.min_ha }}</output></label>
+      <input type="range" id="p-ha" name="min_ha" value="{{ o.min_ha }}" min="0" max="5" step="0.1"></div>
+    <div class="field w-full">
+      <div class="inline"><input type="checkbox" id="p-veg" name="veg" value="1" {{ "checked" if o.veg }}>
+        <label for="p-veg">Exclude dense vegetation (alteration cannot be seen there)</label></div>
+    </div>
+    {% if units %}
+      <div class="field w-full">
+        <label for="p-units">Favourable spectral units (from the lithological classification)</label>
+        <select id="p-units" name="units" multiple size="{{ [units|length, 6]|min }}">
+          {% for u in units %}<option value="{{ u }}" {{ "selected" if u in fav }}>{{ u }}</option>{% endfor %}
+        </select>
+      </div>
+    {% endif %}
+  </div>
+</form>
+
+{% for n in notes %}<p class="note warn">{{ n }}</p>{% endfor %}
+
+{% if empty %}
+  <p class="note warn">Give at least one evidence layer a weight above 0.</p>
+{% else %}
+  {{ metrics([("Target zones", n_zones), ("Target area", "{:,.1f} ha".format(target_ha)),
+              ("Area evaluated", "{:.0f}% of AOI".format(evaluated))]) }}
+  <div class="figrow">
+    <div>
+      <div class="fig imgwrap"><img src="{{ fig_url('prospect-map', **q) }}" alt="Prospectivity map" loading="lazy"></div>
+      {{ dlbar([("Map (PNG)", dl("png", "prospect-map", **q)),
+                ("Prospectivity + evidence (GeoTIFF)", dl("tif", "prospectivity", **q))]) }}
+    </div>
+    <div>
+      <p><strong>Ranked targets</strong> (pink on the map)</p>
+      {% if table %}
+        <div class="tablewrap">{{ table }}</div>
+        {{ dlbar([("Targets (CSV)", dl("csv", "prospectivity", **q))]) }}
+      {% else %}
+        <p class="note warn">No target zones; lower the smallest target size.</p>
+      {% endif %}
+    </div>
+  </div>
+  <h4>Evidence layers used <span class="muted small">(0 = unfavourable, 1 = favourable)</span></h4>
+  <div class="fig imgwrap"><img src="{{ fig_url('prospect-evidence', **q) }}" alt="Evidence layers" loading="lazy"></div>
+  <p class="hint">Alteration layers follow the method chosen on their own tabs, lineaments use the
+    settings on the lineament tab, and spectral units come from the lithological classification. This
+    map ranks ground for follow-up; confirm targets with soil geochemistry, geophysics and mapping.</p>
+{% endif %}

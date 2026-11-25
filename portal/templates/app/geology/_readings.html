@@ -1,0 +1,7 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="tablewrap">{{ table }}</div>
+{{ dlbar([("Readings (CSV)", dl("csv", "readings"))]) }}
+{% if A.n_used < A.n_total %}
+  <p class="hint">The readings marked <strong>set aside</strong> have a dip direction that cannot
+    belong to their strike, so one of the two was mis-recorded. They are left out of the sets.</p>
+{% endif %}

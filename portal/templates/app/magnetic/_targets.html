@@ -1,0 +1,57 @@
+{% from "app/_bits.html" import dlbar with context %}
+<p class="hint">Magnetic-only gold targets: ground with dense structures close to faults and contacts,
+with magnetic lows from alteration. Combine this with IP, geology and geochemistry in section 6.</p>
+
+<form class="card" data-panel-form="mag-targets"
+      action="{{ url_for('app.magnetic_panel', name='targets', view=use, run=run.id) }}">
+  <div class="fieldgrid">
+    {% for name, d in layers.items() %}
+      <div class="field w-quarter">
+        <label for="w{{ loop.index0 }}">{{ name }} <output class="muted">{{ weights[name] }}</output></label>
+        <input type="range" id="w{{ loop.index0 }}" name="w{{ loop.index0 }}"
+               value="{{ weights[name] }}" min="0" max="1" step="0.1">
+        <p class="hint">{{ d[2] }}</p>
+      </div>
+    {% endfor %}
+    <div class="field w-half">
+      <label for="tgt-top">Top % as targets <output class="muted">{{ top }}</output></label>
+      <input type="range" id="tgt-top" name="top" value="{{ top }}" min="1" max="20" step="0.5">
+    </div>
+    <div class="field w-half">
+      <label for="tgt-ha">Smallest target (ha) <output class="muted">{{ min_ha }}</output></label>
+      <input type="range" id="tgt-ha" name="minha" value="{{ min_ha }}" min="0" max="20" step="0.5">
+    </div>
+  </div>
+</form>
+
+{% if empty %}
+  <p class="note warn">Give at least one layer a weight above 0.</p>
+{% else %}
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url(figname) }}" alt="Magnetic target map" loading="lazy"></div>
+    {{ dlbar([("PNG", dl("png", figname)),
+              ("Target score (GeoTIFF)", dl("targets-tif", "targets", w0=weights["Structure density"],
+                                            w1=weights["Proximity to structures"],
+                                            w2=weights["Magnetic low (alteration)"],
+                                            w3=weights["Analytic signal"], top=top, minha=min_ha))]) }}
+  </div>
+  <div class="fignote">
+    <p><strong>{{ table|length }} target{{ "" if table|length == 1 else "s" }}</strong></p>
+    {% if table|length %}
+      <div class="tablewrap">
+        {{ table[["Target", "Latitude", "Longitude", "Area (ha)", "Score", "Est. depth (m)", "Trend"]] | table }}
+      </div>
+      {{ dlbar([("Targets (CSV)", dl("csv", "targets", w0=weights["Structure density"],
+                                     w1=weights["Proximity to structures"],
+                                     w2=weights["Magnetic low (alteration)"],
+                                     w3=weights["Analytic signal"], top=top, minha=min_ha))]) }}
+    {% endif %}
+  </div>
+</div>
+{% if table|length %}
+  <details class="adv"><summary>Target details</summary>
+    <div class="inner"><div class="tablewrap">{{ table | table }}</div></div>
+  </details>
+{% endif %}
+{% endif %}

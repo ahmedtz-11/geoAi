@@ -1,0 +1,11 @@
+{% if not has_image and not A.notes %}
+  <p class="note warn">No picture or notes were uploaded.</p>
+{% endif %}
+{% if has_image %}
+  <div class="fig imgwrap"><img src="{{ fig_url('picture') }}" alt="Uploaded picture" loading="lazy"></div>
+{% endif %}
+{% if A.notes %}
+  <h4>Field notes</h4>
+  <pre style="white-space:pre-wrap;background:#fbfbfc;border:1px solid var(--line);border-radius:8px;
+              padding:.9rem;font-size:.9rem">{{ A.notes }}</pre>
+{% endif %}

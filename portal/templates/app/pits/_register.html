@@ -1,0 +1,7 @@
+<p class="hint">The register keeps pit coordinates between sessions, under your account. Saving a
+project again updates its pits.</p>
+<form method="post" action="{{ url_for('app.pit_mapping') }}">
+  <input type="hidden" name="do" value="save-register">
+  <button class="btn" type="submit">Save these {{ A.n_pits }} pits and {{ A.n_targets }} proposed
+    pits to the register</button>
+</form>

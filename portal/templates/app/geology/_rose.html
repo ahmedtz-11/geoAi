@@ -1,0 +1,6 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="figrow"><div>
+  <div class="fig imgwrap"><img src="{{ fig_url('rose') }}" alt="Strike rose" loading="lazy"></div>
+  {{ dlbar([("Rose (PNG)", dl("png", "rose"))]) }}
+</div>
+<p class="fignote">Strikes in 10° bins, drawn both ways because a strike has no direction.</p></div>

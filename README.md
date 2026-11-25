@@ -7,10 +7,12 @@ Web app that helps geologists and geophysicists find underground minerals, focus
 ```bash
 venv\Scripts\activate          # Windows (from the geoAi folder)
 pip install -r requirements.txt
-streamlit run app.py
+python run_local.py
 ```
 
-An internet connection is needed for satellite imagery (Section 1).
+Then open **http://localhost:8000**. The first run makes an administrator and prints how to sign in;
+[`LOCAL.md`](LOCAL.md) walks through the whole flow. An internet connection is needed for satellite
+imagery (Section 1); everything else works offline.
 
 ## Sections
 
@@ -164,24 +166,25 @@ z-scores of the assays as its gold geochemistry evidence layer.
 
 ## Accounts, subscriptions and hosting
 
-The science app and the business around it are two programs that share a machine, because Streamlit
-cannot do the second one: it has no way to serve a payment webhook or an admin dashboard.
+One Flask application serves all of it: the public site, the sign-in, the admin dashboard and the
+workbench. A section of the workbench is an ordinary route behind `@login_required`, so a person
+whose plan does not include a section simply has no route to it.
 
 ```
-            ┌─────────── nginx (443, TLS) ───────────┐
-browser ───▶│  /       → portal   (Flask, :8000)     │   accounts, plans, payments, admin
-            │  /app/   → gate, then Streamlit :8501  │   the six sections and Pit mapping
-            └────────────────────────────────────────┘
+            ┌──────── nginx (443, TLS) ────────┐
+browser ───▶│  everything → gunicorn :8000     │
+            └──────────────────────────────────┘
 ```
 
-**The gate.** nginx asks the portal, on every request to `/app`, whether this browser's session may pass.
-The answer carries a short-lived signed token naming the subscriber and what their plan opens; nginx
-overwrites any header the browser sent under that name, and `ui/gate.py` refuses a token it cannot
-verify. Both services listen on 127.0.0.1, so nginx is the only way in.
+**How access is decided.** `portal/app/__init__.py` wraps every section view in a decorator that
+checks the signed-in person's plan. There is nothing signed, forwarded or trusted between two
+servers, because there is only one server. Results are addressed from the owner's own user id, so
+another person's run id does not resolve.
 
-`GEOAI_SECRET_KEY` signs the token, and **setting it is what turns the gate on**: with no secret,
-`streamlit run app.py` works exactly as before for local work, and the lock arrives with the deployment
-rather than having to be remembered.
+**Heavy work runs in the background.** A satellite fetch or an IP inversion takes longer than a web
+request should, so it goes to a worker thread and the browser watches a small progress endpoint. The
+result is written to disk the moment it is finished, which is also what lets section 6 combine work
+done on different days.
 
 **A plan is data, not code** (`portal/models.py`). Which sections it opens, whether downloads are
 included, the monthly upload cap and the seat count are columns in a table, so the client adds a tier or
@@ -201,41 +204,37 @@ merchants. Worth knowing before choosing: mobile money generally cannot keep a c
 it silently each month, so renewal is normally a request the subscriber approves, which is why the model
 here is expiry-and-renew rather than a silent auto-charge.
 
-Deployment onto a plain Ubuntu VPS, with the nginx config and both systemd units, is in
-[`deploy/README.md`](deploy/README.md).
+Deployment is in [`deploy/README.md`](deploy/README.md): a plain Ubuntu VPS with nginx and one
+systemd unit, or **cPanel**, which works now that there is a single WSGI application.
 
 ## Project layout
 
 ```
-app.py                     entry point + navigation (filters the pages a plan opens)
+run_local.py               starts everything on your own machine
 wsgi.py                    what gunicorn runs; `flask --app wsgi admin-user` makes the first admin
-portal/                    accounts, plans, subscriptions, payments, admin dashboard (Flask)
-  models.py  config.py  auth.py  public.py  billing.py  admin.py  gate.py
-  templates/  static/
-deploy/                    nginx config, systemd units, env example, VPS guide
-ui/gate.py                 the Streamlit side of the gate: who is signed in, what their plan opens
-views/
-  home.py                  landing page
-  remote_sensing.py        Section 1 page (steps 1-2, then the Step-3 tabs)
-  magnetic.py              Section 2 page (one file -> 12 maps)
-  ip.py                    Section 3 page (one file per line -> one image per line)
-  geology.py               Section 4 page (structure + QDS sheet: upload -> overview and interpretation)
-  geochemistry.py          Section 5 page (soil gold: upload -> overview and interpretation)
-  interpretation.py        Section 6 page (integrated gold prediction)
-  pit_mapping.py           Pit mapping page (trend, remaining potential, proposed pits, register)
-ui/state.py                keeps widget choices when moving between tabs and pages
-ui/interp/                 Sections 2-5 interface
-  page.py                  shared upload -> submit -> results layout of the data pages
-  upload.py                upload slots and per-file column settings
-  tab_magnetic.py          the 13 magnetic result tabs
-  tab_summary.py  tab_geology.py  tab_remote.py  tab_geochem.py  tab_prediction.py
-  predict.py               prediction settings + cached computation
-ui/rs/                     Section 1 Step-3 interface, one module per tab
-  data_panel.py            loads Sentinel-2 scene + Copernicus DEM (shared by all tabs)
-  tab_image.py  tab_index.py (iron / clay)  tab_ratios.py  tab_pca.py
-  tab_lithology.py  tab_lineaments.py  tab_dem.py  tab_terrain3d.py  tab_prospectivity.py
-  common.py                shared state, caching, display helpers
-geoai/                     reusable logic (no Streamlit inside)
+passenger_wsgi.py          the same application, for cPanel
+portal/                    the whole web application (Flask)
+  models.py                users, plans, subscriptions, payments, audit log
+  config.py  auth.py  public.py  billing.py  admin.py
+  app/                     the workbench
+    __init__.py            section registry, access control, job and figure routes
+    store.py               per-person uploads, runs and cached results on disk
+    jobs.py                background work with progress the browser can watch
+    render.py              figures, tables and downloads
+    uploads.py             reading a file and working out what still needs choosing
+    sections/
+      base.py              the upload -> submit -> results cycle every section shares
+      remote.py            1 · Remote sensing (AOI, scene, ten image tabs)
+      magnetic.py          2 · Magnetic (one file -> 12 maps)
+      ip.py                3 · IP (one file per line -> inverse model sections)
+      geology.py           4 · Geology (structure and/or a QDS sheet)
+      geochemistry.py      5 · Geochemistry (soil gold)
+      prediction.py        6 · Integrated gold prediction
+      pits.py              Pit mapping
+  templates/               the pages; app/ holds the workbench, one folder per section
+  static/                  style.css, app.css, app.js
+deploy/                    nginx config, systemd unit, env example, VPS and cPanel guide
+geoai/                     the science: all of it independent of the web layer
   io.py                    read CSV / TXT / DAT / Excel
   coords.py                parse corners (decimal, DMS, UTM, Arc 1960) -> AOI, area, KML/GeoJSON
   grid.py                  gridding for point surveys

@@ -1,0 +1,196 @@
+{% extends "app/layout.html" %}
+{% from "app/_fields.html" import fieldset with context %}
+{% from "app/_bits.html" import metrics, dlbar with context %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>1 · Remote sensing</h1>
+<p class="lede">Give the four corners of your area. GeoAI maps it, measures it, fetches satellite
+imagery and highlights the surface alteration linked to gold.</p>
+
+{% if running %}
+  <div class="runbar"><span class="spin"></span> Fetching satellite data.
+    <span class="sp"><a class="btn sec sm" href="{{ url_for('app.wait', section_key='remote-sensing', job_id=running.id) }}">Watch it</a></span>
+  </div>
+{% endif %}
+
+<section class="step card {{ 'done' if aoi }}">
+  <h2><span class="n">1</span> Area corners</h2>
+  <div class="tabs" data-group="rs-corners" role="tablist">
+    <button type="button" role="tab" data-panel="rs-upload">Upload a file</button>
+    <button type="button" role="tab" data-panel="rs-type">Type them in</button>
+  </div>
+  <div class="panel" id="rs-upload" role="tabpanel" hidden>
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('app.remote_sensing') }}"
+          data-reconfigure="1">
+      <input type="hidden" name="do" value="upload">
+      <div class="filebox">
+        <div class="big">CSV, TXT or Excel, one row per corner</div>
+        <input type="file" name="file" accept=".csv,.txt,.xls,.xlsx">
+        <p class="hint" style="margin-top:.5rem">Columns can be named latitude/longitude, lat/lon,
+          Y/X or northing/easting. Degrees-minutes-seconds like 2°51'00"S also work.</p>
+      </div>
+    </form>
+    {% if have_file %}<p class="chosen">📄 <strong>{{ filename }}</strong></p>{% endif %}
+  </div>
+  <div class="panel" id="rs-type" role="tabpanel" hidden>
+    <form method="post" action="{{ url_for('app.remote_sensing') }}">
+      <input type="hidden" name="do" value="typed">
+      <label for="corners">One row per corner, comma separated</label>
+      <textarea id="corners" name="corners" rows="6"
+                style="font-family:ui-monospace,Menlo,Consolas,monospace">{{ corners_text }}</textarea>
+      <div class="actions"><button class="btn sec" type="submit">Use these corners</button></div>
+    </form>
+  </div>
+
+  {% if corners_df is not none %}
+    <form method="get" action="{{ url_for('app.remote_sensing') }}" style="margin-top:1rem">
+      {{ fieldset(fields) }}
+      <div class="actions"><button class="btn sec sm" type="submit">Apply</button>
+        <span class="hint">Only needed if the columns or the coordinate system were guessed wrongly.</span>
+      </div>
+    </form>
+  {% endif %}
+  {% if aoi_error %}<p class="note err">{{ aoi_error }}</p>{% endif %}
+</section>
+
+{% if aoi %}
+<section class="step card done">
+  <h2><span class="n">2</span> Area of interest</h2>
+  {{ metrics([("Area", "{:,.3f} km²".format(aoi.area_m2 / 1e6)),
+              ("Area", "{:,.1f} ha".format(aoi.area_m2 / 1e4)),
+              ("Perimeter", "{:,.2f} km".format(aoi.perimeter_m / 1000)),
+              ("UTM zone", aoi.utm_name.split("zone")[-1].strip())]) }}
+  <p class="hint">Centre: latitude {{ "%.6f"|format(aoi.centroid[1]) }},
+    longitude {{ "%.6f"|format(aoi.centroid[0]) }} · EPSG:{{ aoi.utm_epsg }}</p>
+  {% for note in aoi.notes %}<p class="note warn">{{ note }}</p>{% endfor %}
+  {% if aoi.area_m2 > 5000000000 %}
+    <p class="note warn">This area is very large (over 5,000 km²). Images will be coarse; consider
+      splitting it.</p>
+  {% endif %}
+  <div class="figrow">
+    <div>{{ aoi_map }}</div>
+    <div>
+      <div class="tablewrap">{{ aoi.corners_table() | table }}</div>
+      <p class="hint">Corners ordered clockwise. Easting and northing in {{ aoi.utm_name }}.</p>
+      {{ dlbar([("GeoJSON", url_for('app.remote_aoi_file', kind='geojson', **aoi_q)),
+                ("KML (Google Earth)", url_for('app.remote_aoi_file', kind='kml', **aoi_q)),
+                ("Corners CSV", url_for('app.remote_aoi_file', kind='csv', **aoi_q))]) }}
+    </div>
+  </div>
+</section>
+
+<section class="step card {{ 'done' if scene }}" id="scene">
+  <h2><span class="n">3</span> Satellite data</h2>
+  {% if scene %}
+    {{ metrics([("Scene date", scene.data.date), ("Pixel size", "%g m"|format(scene.data.res)),
+                ("Clear pixels in AOI", "{:.0f}%".format(clear_pct)),
+                ("Elevation (DEM)", "Loaded" if scene.dem is not none else "Unavailable")]) }}
+    {% if clear_pct < 60 %}
+      <p class="note warn">Much of the area is cloud, shadow or missing. Choose another date for
+        reliable maps.</p>
+    {% endif %}
+    {% if scene.dem is none %}
+      <p class="note warn">Elevation could not be loaded ({{ scene.dem_error }}). The DEM, 3-D terrain
+        and elevation-based lineaments are unavailable; satellite-based lineaments still work.</p>
+    {% endif %}
+    <p class="hint">Tiles {{ scene.tiles }} · Contains modified Copernicus Sentinel data and
+      Copernicus DEM, via Microsoft Planetary Computer.</p>
+  {% else %}
+    <p class="hint">Sentinel-2 multispectral (10–20 m, revisit about 5 days) and Copernicus 30 m
+      elevation. Free sources, no account needed.</p>
+    <form method="post" action="{{ url_for('app.remote_sensing') }}">
+      <input type="hidden" name="do" value="load"><input type="hidden" name="auto" value="1">
+      {{ hidden_aoi }}
+      <div class="actions">
+        <button class="btn" type="submit" {{ "disabled" if running }}>🛰️ Get the latest scene</button>
+        <span class="hint">Searches the last six months for a clear scene. Takes a minute or two.</span>
+      </div>
+    </form>
+  {% endif %}
+
+  <details class="adv" {{ "open" if groups and not scene }}>
+    <summary>{{ "Change scene" if scene else "…or choose a specific date" }}</summary>
+    <div class="inner">
+      <form method="post" action="{{ url_for('app.remote_scenes') }}">
+        {{ hidden_aoi }}
+        <div class="fieldgrid">
+          <div class="field w-third"><label for="start">From</label>
+            <input type="date" id="start" name="start" value="{{ search.start }}"></div>
+          <div class="field w-third"><label for="end">To</label>
+            <input type="date" id="end" name="end" value="{{ search.end }}"></div>
+          <div class="field w-third">
+            <label for="cloud">Most cloud cover (%) <output class="muted">{{ search.cloud }}</output></label>
+            <input type="range" id="cloud" name="cloud" value="{{ search.cloud }}" min="0" max="100">
+          </div>
+        </div>
+        <div class="actions"><button class="btn sec" type="submit">🔎 Search scenes</button></div>
+      </form>
+
+      {% if groups %}
+        <form method="post" action="{{ url_for('app.remote_sensing') }}" style="margin-top:1rem">
+          <input type="hidden" name="do" value="load">
+          {{ hidden_aoi }}
+          <input type="hidden" name="start" value="{{ search.start }}">
+          <input type="hidden" name="end" value="{{ search.end }}">
+          <input type="hidden" name="cloud" value="{{ search.cloud }}">
+          <div class="tablewrap" style="max-height:230px">
+            <table class="data"><thead><tr><th></th><th>Date</th><th>Cloud (tile) %</th>
+              <th>AOI covered %</th><th>Tiles</th><th>Satellite</th></tr></thead><tbody>
+              {% for g in groups %}
+                <tr><td><input type="radio" name="pick" value="{{ g.i }}"
+                               {{ "checked" if loop.first }} style="width:auto"></td>
+                  <td>{{ g.date }}</td><td>{{ "%.1f"|format(g.cloud) }}</td>
+                  <td>{{ "%.1f"|format(100 * g.coverage) }}</td><td>{{ g.tiles }}</td>
+                  <td>{{ g.platform }}</td></tr>
+              {% endfor %}
+            </tbody></table>
+          </div>
+          <div class="fieldgrid"><div class="field w-third">
+            <label for="res">Pixel size (m)</label>
+            <select id="res" name="res">
+              {% for r in resolutions %}<option value="{{ r }}">{{ r }} m</option>{% endfor %}
+            </select>
+            <p class="hint">10 m is the finest Sentinel-2 detail; large areas use bigger pixels to
+              stay fast.</p>
+          </div></div>
+          <div class="actions">
+            <button class="btn" type="submit" {{ "disabled" if running }}>⬇️ Load this scene</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </details>
+</section>
+{% endif %}
+
+{% if aoi and run %}
+  <h2 id="results">Satellite image outputs</h2>
+  <div class="runbar">
+    <span>✅ {{ scene.data.date if scene else "area only" }}</span>
+    <span class="sp">
+      <form method="post" action="{{ url_for('app.delete_run', section_key='remote-sensing', run_id=run.id) }}"
+            onsubmit="return confirm('Clear this scene and its results?')">
+        <button class="btn sec sm" type="submit">Clear results</button>
+      </form>
+    </span>
+  </div>
+  <div class="tabs" data-group="rs" role="tablist">
+    {% for label, name in tabs %}
+      <button type="button" role="tab" data-panel="rs-{{ name }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+  {% for label, name in tabs %}
+    <div class="panel" id="rs-{{ name }}" role="tabpanel" hidden
+         data-lazy="{{ url_for('app.remote_panel', name=name, run=run.id, **aoi_q) }}"></div>
+  {% endfor %}
+{% elif aoi %}
+  <div class="card empty"><div class="big">🛰️</div>
+    <p>Load a satellite scene to see the image outputs.</p></div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('app.plotly_js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

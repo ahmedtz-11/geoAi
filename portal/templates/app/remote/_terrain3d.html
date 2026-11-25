@@ -1,0 +1,44 @@
+{% from "app/_bits.html" import dlbar with context %}
+<p class="hint">
+  The landform in 3-D, with any of the maps draped over it. Drag to rotate, scroll to
+  zoom, right-drag to pan. Seeing the maps on the ground tells you which anomalies sit on ridges of
+  resistant rock, which follow valleys eroded along faults, and which are only slope or shadow.
+</p>
+<form class="card" data-panel-form="rs-terrain3d"
+  action="{{ url_for('app.remote_panel', name='terrain3d', run=run.id, **aoi_q) }}">
+  <input type="hidden" name="_t" value="1">
+  <div class="fieldgrid">
+    <div class="field w-half"><label for="d3-drape">Drape over the terrain</label>
+      <select id="d3-drape" name="drape">
+        {% for d in drapes %}<option value="{{ d }}" {{ "selected" if d==o.drape }}>{{ d }}</option>{% endfor %}
+      </select>
+      <p class="hint">A picture keeps its own colours. A measured grid gets a colour bar and shows its
+        value when you hover.</p>
+    </div>
+    <div class="field w-quarter">
+      <label for="d3-exag">Vertical exaggeration <output class="muted">{{ o.exag }}</output></label>
+      <input type="range" id="d3-exag" name="exag" value="{{ o.exag }}" min="1" max="30" step="0.5">
+      <p class="hint">Elevations on the axis and in the hover stay true.</p>
+    </div>
+    <div class="field w-quarter"><label for="d3-detail">Detail</label>
+      <select id="d3-detail" name="detail">
+        {% for d in details %}<option value="{{ d }}" {{ "selected" if d==o.detail }}>{{ d }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field w-quarter">
+      <label for="d3-az">Sun azimuth (°) <output class="muted">{{ o.az }}</output></label>
+      <input type="range" id="d3-az" name="az" value="{{ o.az }}" min="0" max="360" step="15">
+    </div>
+    <div class="field w-quarter">
+      <label for="d3-alt">Sun altitude (°) <output class="muted">{{ o.alt }}</output></label>
+      <input type="range" id="d3-alt" name="alt" value="{{ o.alt }}" min="5" max="85" step="5">
+    </div>
+  </div>
+</form>
+<div class="fig">{{ plot }}</div>
+{{ dlbar([("3-D view (interactive HTML)", dl("html", "terrain3d", **q))]) }}
+<p class="hint">
+  {{ attribution }}. Elevation is real, stretched {{ o.exag }}× for viewing; the axis and
+  the hover still read true metres. Drawn on a {{ "{:,.0f}".format(cell) }} m grid{% if step > 1 %},
+  averaged from the {{ res_m }} m analysis grid{% endif %}. The red line is your area of interest.
+</p>

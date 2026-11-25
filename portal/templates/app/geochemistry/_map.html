@@ -1,0 +1,6 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="fig imgwrap"><img src="{{ fig_url('map') }}" alt="Gold in soil" loading="lazy"></div>
+{{ dlbar([("Map (PNG)", dl("png", "map"))]) }}
+<p class="hint">Circle size follows the assay. Thresholds: weak at or above
+  {{ "%.4g"|format(limits[0]) }}, anomalous at or above {{ "%.4g"|format(limits[1]) }}, strongly
+  anomalous at or above {{ "%.4g"|format(limits[2]) }} {{ u }}. Dashed rings are the zones.</p>

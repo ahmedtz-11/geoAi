@@ -1,0 +1,13 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('histogram') }}" alt="Gold distribution" loading="lazy"></div>
+    {{ dlbar([("PNG", dl("png", "histogram"))]) }}
+  </div>
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('probability') }}" alt="Log-probability plot" loading="lazy"></div>
+    {{ dlbar([("PNG", dl("png", "probability"))]) }}
+  </div>
+</div>
+<p class="hint">On the right, one population plots as a single straight line of points. A step in the
+points where the two fitted lines cross means a mineralised population sits on top of background.</p>

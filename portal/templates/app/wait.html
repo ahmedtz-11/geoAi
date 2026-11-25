@@ -1,0 +1,26 @@
+{% extends "app/layout.html" %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>{{ section.title }}</h1>
+<p class="lede">{{ job.label or "Working on your data." }}</p>
+
+<div class="card progress" data-job="{{ job.id }}"
+     data-poll="{{ url_for('app.job_status', job_id=job.id) }}"
+     data-done="{{ url_for(section.endpoint) }}"
+     data-retry="{{ url_for(section.endpoint) }}">
+  <div class="bar"><i style="width:{{ (job.progress * 100)|round|int }}%"></i></div>
+  <p class="say"><span class="spin"></span> <span class="tx">{{ job.message }}</span>
+     <span class="el">0s</span></p>
+</div>
+
+<p class="hint">You can leave this page open, or come back later — the work carries on either way, and
+the results will be waiting in {{ section.title }}.</p>
+
+<form method="post" action="{{ url_for('app.job_cancel', job_id=job.id) }}"
+      onsubmit="setTimeout(function(){location.href='{{ url_for(section.endpoint) }}'},600)">
+  <button class="btn sec sm" type="submit">Cancel this run</button>
+</form>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

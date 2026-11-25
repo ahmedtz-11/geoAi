@@ -19,7 +19,7 @@
     <p class="small">Downloads: {% if current_user.may_download() %}<span class="tag ok">included</span>
       {% else %}<span class="tag no">not included</span>{% endif %}
       &nbsp; Uploads this month: <b>{{ used }}</b>{% if limit %} of {{ limit }}{% else %} (no limit){% endif %}</p>
-    <p><a class="btn" href="{{ url_for('gate.app_signin') }}">Open the app</a>
+    <p><a class="btn" href="{{ url_for('app.home') }}">Open the workbench</a>
        <a class="btn sec" href="{{ url_for('billing.pricing') }}">Change plan</a></p>
   </div>
   <div class="card">

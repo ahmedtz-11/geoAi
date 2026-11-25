@@ -1,0 +1,5 @@
+{% from "app/_bits.html" import dlbar with context %}
+<div class="fig imgwrap"><img src="{{ fig_url('map') }}" alt="Structural measurements" loading="lazy"></div>
+{{ dlbar([("Map (PNG)", dl("png", "map"))]) }}
+<p class="hint">Each long tick runs along the strike of a plane, with a short tick towards the dip,
+coloured by set. A cross marks a reading that was set aside.</p>

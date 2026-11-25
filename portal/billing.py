@@ -78,7 +78,7 @@ def start_checkout(user, plan):
 
 @bp.route("/payments/webhook/<provider>", methods=["POST"])
 def webhook(provider):
-    """Where a gateway reports a payment. Streamlit cannot serve this at all; the portal can.
+    """Where a gateway reports a payment.
 
     Nothing is trusted until the signature is checked: a webhook URL is public, so anyone can post to it.
     """

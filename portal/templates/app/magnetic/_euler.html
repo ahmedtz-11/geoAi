@@ -1,0 +1,27 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+<p class="hint">3-D Euler deconvolution (structural index {{ si }}): depth to the top of magnetic
+sources, solved window by window from the field and its gradients.</p>
+
+{% if not eu|length %}
+  <p class="note warn">No reliable Euler solutions. Try another structural index or window size under
+    Advanced settings, then submit again.</p>
+{% else %}
+{{ metrics([("Solutions", "{:,}".format(eu|length)),
+            ("Median depth", "%.0f m"|format(q[0.5])),
+            ("Middle 50%", "%.0f–%.0f m"|format(q[0.25], q[0.75])),
+            ("Shallowest 10%", "< %.0f m"|format(q[0.1]))]) }}
+
+<div class="fig">{{ plot }}</div>
+<p class="hint">Drag to rotate. Depth is plotted downwards, so the deepest solutions sit at the bottom.</p>
+
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('euler-map') }}" alt="Euler solutions in plan" loading="lazy"></div>
+    {{ dlbar([("PNG", dl("png", "euler-map")), ("Solutions (CSV)", dl("csv", "euler"))]) }}
+  </div>
+  <div class="fignote">
+    <div class="fig imgwrap"><img src="{{ fig_url('euler-hist') }}" alt="Euler depth histogram" loading="lazy"></div>
+    {{ dlbar([("Histogram PNG", dl("png", "euler-hist"))]) }}
+  </div>
+</div>
+{% endif %}

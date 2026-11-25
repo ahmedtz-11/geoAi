@@ -1,0 +1,11 @@
+{% from "app/_bits.html" import dlbar with context %}
+{% if sets_table is none %}
+  <p class="note warn">No set could be separated from these readings.</p>
+{% else %}
+  <div class="tablewrap">{{ sets_table | table }}</div>
+  {{ dlbar([("Sets (CSV)", dl("csv", "sets"))]) }}
+  {% if cross_table is not none %}
+    <h4>Where the sets cross — the line an ore shoot usually follows</h4>
+    <div class="tablewrap">{{ cross_table | table }}</div>
+  {% endif %}
+{% endif %}

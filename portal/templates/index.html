@@ -1,37 +1,24 @@
-{% extends "base.html" %} {% block hero %}
-<div class="hero">
-  <div class="wrap">
-    <h1>Find gold in your own field data</h1>
-    <p>
-      {{ BRAND }} turns the surveys you already run — soil geochemistry, ground
-      magnetics, IP lines, structural measurements and satellite imagery — into
-      interpreted maps, ranked targets and depth estimates, using the same
-      methods as Oasis montaj and Res2DInv.
-    </p>
-    <a class="btn" href="{{ url_for('auth.register') }}"
-      >Create a free account</a
-    >
-    <a class="btn sec" href="{{ url_for('billing.pricing') }}">See the plans</a>
-  </div>
-</div>
-{% endblock %} {% block body %}
+{% extends "base.html" %}
+{% block hero %}
+<div class="hero"><div class="wrap">
+  <h1>Find gold in your own field data</h1>
+  <p>{{ BRAND }} turns the surveys you already run — soil geochemistry, ground magnetics, IP lines,
+     structural measurements and satellite imagery — into interpreted maps, ranked targets and depth
+     estimates, using the same methods as Oasis montaj and Res2DInv.</p>
+  <a class="btn" href="{{ url_for('auth.register') }}">Create a free account</a>
+  <a class="btn sec" href="{{ url_for('billing.pricing') }}">See the plans</a>
+</div></div>
+{% endblock %}
+{% block body %}
 <h2>What it does</h2>
-<div class="card">
-  <ul class="checks">
-    <li><b>Remote sensing</b> — alteration indices, lineaments, 3-D terrain</li>
-    <li>
-      <b>Magnetic</b> — RTP/RTE, derivatives, SPI and Euler depths, target map
-    </li>
-    <li><b>IP</b> — inverse model chargeability and resistivity sections</li>
-    <li><b>Geology</b> — structural sets, ore-shoot plunge, stereonet</li>
-    <li>
-      <b>Geochemistry</b> — where background stops, anomaly zones, kriging
-    </li>
-    <li>
-      <b>Integrated prediction</b> — all of it combined into ranked targets
-    </li>
-  </ul>
-</div>
+<div class="card"><ul class="checks">
+  <li><b>Remote sensing</b> — alteration indices, lineaments, 3-D terrain</li>
+  <li><b>Magnetic</b> — RTP/RTE, derivatives, SPI and Euler depths, target map</li>
+  <li><b>IP</b> — inverse model chargeability and resistivity sections</li>
+  <li><b>Geology</b> — structural sets, ore-shoot plunge, stereonet</li>
+  <li><b>Geochemistry</b> — where background stops, anomaly zones, kriging</li>
+  <li><b>Integrated prediction</b> — all of it combined into ranked targets</li>
+</ul></div>
 <h2>Plans</h2>
 <div class="grid g3">
   {% for p in plans %}
@@ -39,16 +26,9 @@
     <div class="small muted">{{ p.name }}</div>
     <div class="price">{{ p.price_label }}</div>
     <ul>
-      {% for s in p.section_list %}
-      <li>{{ sections.get(s, s) }}</li>
-      {% endfor %}
-      <li>
-        {{ 'Downloads included' if p.can_download else 'View on screen only' }}
-      </li>
-      <li>
-        {{ p.max_uploads_per_month ~ ' uploads a month' if
-        p.max_uploads_per_month else 'Unlimited uploads' }}
-      </li>
+      {% for s in p.section_list %}<li>{{ sections.get(s, s) }}</li>{% endfor %}
+      <li>{{ 'Downloads included' if p.can_download else 'View on screen only' }}</li>
+      <li>{{ p.max_uploads_per_month ~ ' uploads a month' if p.max_uploads_per_month else 'Unlimited uploads' }}</li>
     </ul>
     <a class="btn" href="{{ url_for('auth.register') }}">Get started</a>
   </div>

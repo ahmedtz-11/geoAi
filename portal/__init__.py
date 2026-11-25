@@ -1,4 +1,8 @@
-"""The GeoAI portal: accounts, subscriptions, an admin dashboard, and the gate to the Streamlit app."""
+"""GeoAI: the public site, accounts and subscriptions, the admin dashboard, and the workbench itself.
+
+One Flask application serves all of it, so a section of the workbench is an ordinary route behind
+@login_required rather than a second server that has to be told who is signed in.
+"""
 import os
 
 from flask import Flask, render_template
@@ -25,10 +29,12 @@ def create_app(config=None):
     from .admin import bp as admin_bp
     from .auth import bp as auth_bp
     from .billing import bp as billing_bp
-    from .gate import bp as gate_bp
     from .public import bp as public_bp
-    for bp in (public_bp, auth_bp, billing_bp, admin_bp, gate_bp):
+    for bp in (public_bp, auth_bp, billing_bp, admin_bp):
         app.register_blueprint(bp)
+
+    from .app import register as register_workbench
+    register_workbench(app)
 
     @login_manager.user_loader
     def load_user(uid):
@@ -36,8 +42,10 @@ def create_app(config=None):
 
     @app.context_processor
     def inject():
-        return {"BRAND": app.config["BRAND"], "APP_PATH": app.config["APP_PATH"],
-                "SUPPORT_EMAIL": app.config["SUPPORT_EMAIL"]}
+        from .app.uploads import ACCEPT_ATTR
+        return {"BRAND": app.config["BRAND"], "SUPPORT_EMAIL": app.config["SUPPORT_EMAIL"],
+                "accept_attr": ACCEPT_ATTR,
+                "accept_text": "CSV, text, Geosoft XYZ (.dat), Excel, GeoTIFF, or a picture of a map."}
 
     @app.errorhandler(403)
     def forbidden(_):
@@ -46,6 +54,14 @@ def create_app(config=None):
     @app.errorhandler(404)
     def missing(_):
         return render_template("error.html", code=404, message="That page does not exist."), 404
+
+    @app.errorhandler(413)
+    def too_big(_):
+        mb = app.config["MAX_CONTENT_LENGTH"] // (1024 * 1024)
+        return render_template("error.html", code=413,
+                               message=f"That file is larger than {mb} MB, which is the most this "
+                                       f"server accepts. Split the survey, or ask the administrator "
+                                       f"to raise GEOAI_MAX_UPLOAD_MB."), 413
 
     with app.app_context():
         db.create_all()

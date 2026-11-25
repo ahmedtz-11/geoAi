@@ -1,0 +1,9 @@
+{% from "app/_bits.html" import dlbar with context %}
+{% if not table %}
+  <p class="note warn">No sample reaches the anomalous threshold, so there is nothing to rank.</p>
+{% else %}
+  <div class="tablewrap">{{ table }}</div>
+  {{ dlbar([("Zones (CSV)", dl("csv", "zones"))]) }}
+  <p class="hint">Ranked by peak assay. A zone of one or two samples is not a target yet: one high
+    sample beside ordinary ones is as often a single grain in the sieve as it is a discovery.</p>
+{% endif %}

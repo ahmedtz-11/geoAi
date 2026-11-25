@@ -1,0 +1,11 @@
+{% from "app/_bits.html" import dlbar with context %}
+{% if not table %}
+  <p class="note warn">No new pits to propose: the pits are already evenly spaced along the trend and
+    step-outs are set to 0.</p>
+{% else %}
+  <div class="tablewrap">{{ table }}</div>
+  {{ dlbar([("Proposed pits (CSV)", dl("csv", "targets"))]) }}
+  <p class="hint"><strong>Infill</strong> pits test gaps between two mineralised pits (lowest risk).
+    <strong>Step-out</strong> pits extend the trend beyond the last pit; the further out, the lower
+    the score.</p>
+{% endif %}

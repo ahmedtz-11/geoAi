@@ -1,75 +1,73 @@
-# Seeing the whole thing on your own machine
+# Running GeoAI on your own machine
 
-Two halves run side by side: the **portal** (accounts, plans, admin) and the **app** (the eight GeoAI
-sections). One command starts both and wires the gate between them.
+One command, in the geoAi folder:
 
 ```
-C:\Users\ADMIN\Documents\geoAi> python run_local.py
+venv\Scripts\python run_local.py
 ```
 
-It prints two addresses and an administrator to sign in with:
+It starts everything on **http://localhost:8000** — the public site, the sign-in, the admin dashboard
+and the workbench — makes an administrator the first time it runs, and prints the sign-in details:
 
 | | |
 |---|---|
-| Portal | http://localhost:8000 |
+| Site | http://localhost:8000 |
+| Workbench | http://localhost:8000/app/ |
 | Admin dashboard | http://localhost:8000/admin |
-| The app itself | http://localhost:8501 |
 | Administrator | `admin@local` / `local-admin-password` |
 
-Ctrl+C in that window stops both. The first run makes `data\portal.db`; delete that file to start over
-with no accounts.
+Ctrl+C stops it. The first run makes `data\portal.db`; delete that file to start over with no
+accounts. Uploads and results live in `data\work\<your user id>\`.
+
+If the packages are not installed yet: `venv\Scripts\pip install -r requirements.txt`.
 
 ## Walk through it as a customer would
 
-1. **Sign up.** Open http://localhost:8000, press *Create account*, fill it in. You land on the pricing
-   page with a Free plan.
-2. **Open the app.** Press *Open the app* in the top bar. The sidebar has Home and Remote sensing, the
-   home page shows the other six with 🔒 *Comes with a higher plan*, and the bottom of the sidebar shows
-   your name and plan.
+1. **Sign up.** Open the site, press *Create account*. You land on the Free plan, so the workbench
+   shows Remote sensing and nothing else.
+2. **Open the workbench.** The locked sections are greyed out with a 🔒.
 3. **Become the administrator.** Open a **private / incognito window** so you stay signed in as the
    customer in the first one, go to http://localhost:8000/login and sign in as `admin@local`.
-4. **Take a payment.** Admin → Users → *Manage* on the customer → pick a plan, type what they paid and
-   the receipt number, press *Activate*. The plan, the payment and who recorded it are all stored.
-5. **Back to the customer's window.** Reload, press *Open the app* again: Magnetic, IP and Pit mapping
-   are now in the sidebar. Upgrade them to Pro and Geology, Geochemistry and the integrated prediction
-   appear as well.
-6. **Try to get in without paying.** Open http://localhost:8501 directly: "Please sign in". That is the
-   gate doing its job.
+4. **Take a payment.** Admin → Users → *Manage* on the customer → pick a plan, type what they paid
+   and the receipt number, press *Activate*. The plan, the payment and who recorded it are all stored.
+5. **Back in the customer's window.** Reload the workbench: Magnetic, IP and Pit mapping are now
+   open. Upgrade them to Pro and Geology, Geochemistry and the integrated prediction appear too.
+6. **Try to get in without paying.** Sign out and open http://localhost:8000/app/magnetic — it sends
+   you to the sign-in page. Signed in on a Free plan, it sends you to the pricing page.
 
-Other things worth trying from the admin dashboard: *Plans* to change what each plan opens (edit the
-Basic plan to include Geochemistry and the customer has it on their next reload — plans are data, not
-code), *Payments* for the money taken, *Audit* for who did what, and *Suspend* on a user.
+Other things worth trying from the admin dashboard: *Plans* to change what each plan opens (add
+Geochemistry to Basic and the customer has it on their next reload — plans are data, not code),
+*Payments* for the money taken, *Audit* for who did what, and *Suspend* on a user.
 
-## How this differs from the real server
+## Trying the sections
 
-On the VPS, nginx sits in front, asks the portal "is this person allowed?" on every request, and puts
-the answer in a header the app reads. On your laptop there is no nginx, so `run_local.py` sets two
-things that exist only for this:
+There are sample files in `sample_data\`:
 
-- `GEOAI_APP_URL=http://localhost:8501` — tells the portal the app is at its own address rather than
-  behind `/app`.
-- `GEOAI_ALLOW_TOKEN_IN_URL=1` — lets the gate token travel in the link, since there is no header.
+| Section | File |
+|---|---|
+| 1 · Remote sensing | type the corners in, or `aoi_corners_latlong.csv` |
+| 2 · Magnetic | `magnetics_tmi.dat` |
+| 3 · IP | `ip_res2dinv_L1.dat`, or the three `ip_line_*.csv` together |
+| 4 · Geology | `structure_measurements.csv` and/or `qds_sheet.png` |
+| 5 · Geochemistry | `soil_gold.xlsx` |
+| Pit mapping | `pits_sample.xlsx` plus `pits_notes.txt` |
+| 6 · Prediction | tick whatever the other sections have produced |
 
-Neither is set in `deploy/env.example`, so the server never accepts a token from a URL. The development
-secret in `run_local.py` is also fixed and public; the server gets a random one (see `deploy/README.md`,
-step 3). This is why you will see `?t=…` in the address bar locally and never will in production.
+Remote sensing downloads Sentinel-2 imagery and a Copernicus DEM, so that one needs an internet
+connection; everything else works offline.
+
+## How this differs from the server
+
+Only two things: `run_local.py` uses a fixed development secret, and it serves over plain HTTP with
+Flask's own server instead of gunicorn behind nginx. There is no separate app process, no token and
+no gate to configure — the workbench is part of the same application as the sign-in, so what you see
+locally is what runs on the server. `deploy/README.md` covers the real thing, including cPanel.
 
 ## If something does not start
 
 | What you see | What it means |
 |---|---|
-| `Address already in use` | Something already holds 8000 or 8501. Close it, or change the ports at the bottom of `run_local.py`. |
-| `No module named flask` | `pip install -r requirements.txt` |
-| The app says "Please sign in" after you pressed *Open the app* | The link was opened more than 12 hours after it was made. Go back to the portal and press it again. |
-| You refreshed and got signed out | Keep the `?t=…` on the end of the address; it is what identifies you locally. |
-
-## Running the app on its own, with no portal
-
-Still works, exactly as before:
-
-```
-streamlit run app.py
-```
-
-With no `GEOAI_SECRET_KEY` set, the gate stays open, every section is there, and no sign-in badge
-appears. That is the quickest way to work on a section without thinking about plans.
+| `Address already in use` | Something already holds port 8000. Close it, or set `GEOAI_PORT`. |
+| `No module named flask` | `venv\Scripts\pip install -r requirements.txt` |
+| A section says "not part of your plan" | You are signed in as a customer, not the administrator. |
+| A run never finishes | Look at the terminal window; the error is printed there. |

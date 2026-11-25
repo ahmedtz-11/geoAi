@@ -1,0 +1,103 @@
+{% extends "app/layout.html" %}
+{% from "app/_upload.html" import upload_step, configure_fields with context %}
+{% from "app/_fields.html" import fieldset with context %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>2 · Magnetic</h1>
+<p class="lede">Upload one magnetic survey file — ground or airborne TMI. GeoAI produces the standard
+interpretation maps: TMI, RTP/RTE, vertical derivatives, analytic signal, tilt, THDR, lineaments,
+upward continuation, SPI and Euler depths, and a magnetic target map.</p>
+
+{% if running %}
+  <div class="runbar"><span class="spin"></span> A run is in progress.
+    <span class="sp"><a class="btn sec sm" href="{{ url_for('app.wait', section_key='magnetic', job_id=running.id) }}">Watch it</a></span>
+  </div>
+{% endif %}
+
+{{ upload_step(items, section, 1, "Upload the survey",
+   note="Geosoft XYZ (.dat), CSV, text, Excel, a GeoTIFF grid, or a picture of a map.") }}
+
+<form method="post" action="{{ url_for('app.magnetic') }}">
+  <input type="hidden" name="do" value="submit">
+  {{ configure_fields(items, 2, "Check how the file is read") }}
+
+  {% if items and items[0].info %}
+  <section class="step card">
+    <h2><span class="n">3</span> The Earth's field at the survey</h2>
+    <p class="hint">Needed to reduce the data to the pole or the equator.</p>
+    <div class="fieldgrid">
+      <div class="field w-third">
+        <label for="survey_date">Survey date</label>
+        <input type="date" id="survey_date" name="survey_date" value="{{ field_info.date }}"
+               data-reload-on-change>
+      </div>
+      <div class="field w-full">
+        {% if field_info and field_info.source %}
+          <p class="hint">From {{ field_info.source }} at {{ "%.4f"|format(field_info.lat) }},
+            {{ "%.4f"|format(field_info.lon) }}: inclination <strong>{{ field_info.inc }}°</strong>,
+            declination <strong>{{ field_info.dec }}°</strong>{% if field_info.total %},
+            total field {{ "{:,.0f}".format(field_info.total) }} nT{% endif %}.</p>
+        {% else %}
+          <p class="note warn">The survey could not be located, so a default field direction is used.
+            Tick the box below and enter the right values if you know them.</p>
+        {% endif %}
+        <input type="hidden" name="auto_inc" value="{{ field_info.inc }}">
+        <input type="hidden" name="auto_dec" value="{{ field_info.dec }}">
+      </div>
+      <div class="field w-full">
+        <div class="inline">
+          <input type="checkbox" id="manual_field" name="manual_field" value="1">
+          <label for="manual_field">Enter the inclination and declination myself</label>
+        </div>
+      </div>
+      <div class="field w-half" data-needs="manual_field">
+        <label for="inc">Inclination (°)</label>
+        <input type="number" id="inc" name="inc" value="{{ field_info.inc }}" min="-90" max="90" step="0.1">
+      </div>
+      <div class="field w-half" data-needs="manual_field">
+        <label for="dec">Declination (°)</label>
+        <input type="number" id="dec" name="dec" value="{{ field_info.dec }}" min="-180" max="180" step="0.1">
+      </div>
+    </div>
+    {{ fieldset(settings_fields.reduction) }}
+
+    <details class="adv">
+      <summary>Advanced settings</summary>
+      <div class="inner">
+        <p class="hint">Gridding, spike and levelling settings shape the <strong>Filled</strong> image.
+          The <strong>Normal</strong> image always uses the original processing: every reading, linear
+          interpolation, nothing filled in between the lines.</p>
+        {{ fieldset(settings_fields.grid, legend="Gridding") }}
+        {{ fieldset(settings_fields.clean, legend="Cleaning and levelling") }}
+        {{ fieldset(settings_fields.depth, legend="Depth estimation") }}
+      </div>
+    </details>
+  </section>
+
+  <section class="step card">
+    <h2><span class="n">4</span> Submit</h2>
+    <div class="actions">
+      <button class="btn" type="submit" {{ "disabled" if running }}>🚀 Submit &amp; interpret</button>
+      <span class="hint">This takes a minute or two. You can leave the page while it runs.</span>
+    </div>
+  </section>
+  {% endif %}
+</form>
+
+{% if not items and not run %}
+  <div class="card empty">
+    <div class="big">🧲</div>
+    <p>Upload a magnetic survey to begin. There is a sample in <code>sample_data/magnetics_tmi.dat</code>.</p>
+  </div>
+{% endif %}
+
+{% if run %}
+  {% include "app/magnetic/_results.html" %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('app.plotly_js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% from "app/_bits.html" import dlbar, metrics with context %}
+<p class="hint">Source Parameter Imaging (contact model): depth = 1 / local wavenumber of the tilt angle,
+computed over the contacts, where the tilt is near 0°. Coloured points show the depth to the top of
+each magnetic contact.</p>
+
+{% if not pts|length %}
+  <p class="note warn">No SPI solutions were found; the data may be too smooth or too noisy.</p>
+{% else %}
+{{ metrics([("SPI points", "{:,}".format(pts|length)),
+            ("Median depth", "%.0f m"|format(q[0.5])),
+            ("Middle 50%", "%.0f–%.0f m"|format(q[0.25], q[0.75]))]) }}
+<div class="figrow">
+  <div>
+    <div class="fig imgwrap"><img src="{{ fig_url('spi-map') }}" alt="SPI depth" loading="lazy"></div>
+    {{ dlbar([("PNG", dl("png", "spi-map")), ("Depth grid (GeoTIFF)", dl("tif", "spi"))]) }}
+  </div>
+  <div class="fignote">
+    <div class="fig imgwrap"><img src="{{ fig_url('spi-hist') }}" alt="SPI depth histogram" loading="lazy"></div>
+    {{ dlbar([("Histogram PNG", dl("png", "spi-hist")), ("Points (CSV)", dl("csv", "spi"))]) }}
+  </div>
+</div>
+{% endif %}

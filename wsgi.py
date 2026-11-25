@@ -24,8 +24,9 @@ def admin_user(email, password, name):
 @app.cli.command("show-config")
 def show_config():
     """Print the settings that matter and anything unsafe about them."""
-    for key in ("SECRET_KEY", "SQLALCHEMY_DATABASE_URI", "APP_PATH", "PAYMENT_PROVIDER",
-                "SESSION_COOKIE_SECURE", "BRAND", "SUPPORT_EMAIL"):
+    for key in ("SECRET_KEY", "SQLALCHEMY_DATABASE_URI", "DATA_DIR", "MAX_CONTENT_LENGTH",
+                "KEEP_RUNS", "PAYMENT_PROVIDER", "SESSION_COOKIE_SECURE", "BRAND",
+                "SUPPORT_EMAIL"):
         value = app.config.get(key)
         if key == "SECRET_KEY":
             value = "(set)" if value != "dev-only-change-me" else "DEVELOPMENT VALUE"

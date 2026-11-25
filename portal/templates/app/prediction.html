@@ -1,0 +1,61 @@
+{% extends "app/layout.html" %}
+{% from "app/_bits.html" import metrics with context %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>6 · Integrated interpretation &amp; gold prediction</h1>
+<p class="lede">Brings together everything you have submitted in the other sections and predicts where
+gold is most likely, with an estimated depth and structural trend for each target.</p>
+
+<section class="step card {{ 'done' if chosen }}">
+  <h2><span class="n">1</span> Data to combine</h2>
+  <form method="get" action="{{ url_for('app.prediction') }}">
+    <input type="hidden" name="_pick" value="1">
+    <div class="secgrid">
+      {% for a in available %}
+        <div class="seccard {{ '' if a.run else 'locked' }}">
+          <h3>{{ a.label }}</h3>
+          {% if a.run %}
+            <div class="inline">
+              <input type="checkbox" id="use-{{ a.key }}" name="use" value="{{ a.key }}"
+                     {{ "checked" if a.key in (chosen_keys or []) }}>
+              <label for="use-{{ a.key }}">Use these results</label>
+            </div>
+            <p class="small muted">{{ a.files|join(", ") or "stored run" }}</p>
+          {% else %}
+            <p>Nothing submitted yet.</p>
+          {% endif %}
+          <div class="go">
+            <a class="btn sec sm" href="{{ url_for(a.endpoint) }}">Open {{ a.label.split('·')[-1].strip() }}</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="actions"><button class="btn sec" type="submit">Use the ticked sections</button></div>
+  </form>
+</section>
+
+{% if not chosen %}
+  <div class="card empty"><div class="big">⭐</div>
+    <p>Submit data in at least one of the sections above, then come back here.</p></div>
+{% elif not combined %}
+  <p class="note err">Nothing could be combined from those sections.</p>
+{% else %}
+  {% for e in combined.errors %}<p class="note warn">{{ e }}</p>{% endfor %}
+  <h2 id="results">Results</h2>
+  <p class="hint">Combining {{ chosen|length }} section(s) ·
+    all data converted to EPSG:{{ combined.epsg }}{% if combined.grid %} ·
+    analysis grid {{ "%.0f"|format(combined.grid[2]) }} m{% endif %}.</p>
+  <div class="tabs" data-group="pred" role="tablist">
+    {% for label, name in tabs %}
+      <button type="button" role="tab" data-panel="pr-{{ name }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+  {% for label, name in tabs %}
+    <div class="panel" id="pr-{{ name }}" role="tabpanel" hidden
+         data-lazy="{{ url_for('app.prediction_panel', name=name, _pick=1, use=chosen_keys) }}"></div>
+  {% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "app/layout.html" %}
+{% from "app/_upload.html" import upload_step with context %}
+{% from "app/_fields.html" import fieldset with context %}
+{% from "app/_bits.html" import metrics, dlbar with context %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+
+{% block main %}
+<h1>Pit mapping</h1>
+<p class="lede">Upload the coordinates of your pits. GeoAI finds the mineralisation trend, rates how
+much potential each pit still has, proposes where to sink the next pits, and keeps every coordinate
+in a register for future use.</p>
+
+{% if running %}
+  <div class="runbar"><span class="spin"></span> A run is in progress.
+    <span class="sp"><a class="btn sec sm" href="{{ url_for('app.wait', section_key='pit-mapping', job_id=running.id) }}">Watch it</a></span></div>
+{% endif %}
+
+{{ upload_step(items, section, 1, "Upload", multiple=True,
+   note="Pit coordinates (Excel, CSV or TXT) — one row per pit; depth, gold grade, status and vein
+   strike are used when the file has them. You can also add a picture (sketch, photo or map) and a
+   TXT of field notes. Samples: sample_data/pits_sample.xlsx and sample_data/pits_notes.txt.") }}
+
+<form method="post" action="{{ url_for('app.pit_mapping') }}">
+  <input type="hidden" name="do" value="submit">
+  {% if form %}
+    <section class="step card">
+      <h2><span class="n">2</span> Check how the file is read</h2>
+      {% if form.error %}<p class="note err">{{ form.error }}</p>{% else %}{{ fieldset(form.fields) }}{% endif %}
+    </section>
+
+    {% if picture %}
+      <section class="step card">
+        <h2><span class="n">3</span> The picture</h2>
+        <div class="inline">
+          <input type="checkbox" id="img_is_map" name="img_is_map" value="1">
+          <label for="img_is_map">This picture is a map: draw it behind the pits</label>
+        </div>
+        <div data-needs="img_is_map">
+          <p class="hint">Type the coordinates of the picture's edges, in the same system the pits end
+            up in (UTM metres).</p>
+          <div class="fieldgrid">
+            {% for n, lbl in [("ix0","West"),("ix1","East"),("iy0","South"),("iy1","North")] %}
+              <div class="field w-quarter"><label for="{{ n }}">{{ lbl }}</label>
+                <input type="number" id="{{ n }}" name="{{ n }}" value="0" step="any"></div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    <section class="step card">
+      <h2><span class="n">{{ 4 if picture else 3 }}</span> Submit</h2>
+      <div class="fieldgrid">
+        <div class="field w-third"><label for="project">Project / site name</label>
+          <input type="text" id="project" name="project" value="{{ project }}">
+          <p class="hint">Pits are saved in the register under this name.</p></div>
+        <div class="field w-third">
+          <label for="max_t">Most new pits to propose <output class="muted">{{ max_t }}</output></label>
+          <input type="range" id="max_t" name="max_t" value="{{ max_t }}" min="2" max="20"></div>
+        <div class="field w-third">
+          <label for="outs">Step-outs beyond each end <output class="muted">{{ outs }}</output></label>
+          <input type="range" id="outs" name="outs" value="{{ outs }}" min="0" max="4"></div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit" {{ "disabled" if running }}>🚀 Submit &amp; interpret</button>
+      </div>
+    </section>
+  {% endif %}
+</form>
+
+{% if not items and not run %}
+  <div class="card empty"><div class="big">⛏️</div><p>Upload your pit coordinates to begin.</p></div>
+{% endif %}
+
+{% if run and analysis %}
+  <h2 id="results">Interpretation</h2>
+  <div class="runbar">
+    <span>✅ {{ analysis.project }}</span>
+    <span class="sp">
+      <form method="post" action="{{ url_for('app.delete_run', section_key='pit-mapping', run_id=run.id) }}"
+            onsubmit="return confirm('Clear these results?')">
+        <button class="btn sec sm" type="submit">Clear results</button></form>
+    </span>
+  </div>
+  {{ metrics([("Pits", analysis.n_pits),
+              ("Trend", "%.0f° %s"|format(analysis.trend.azimuth, analysis.trend_label)),
+              ("Trend length", "{:,.0f} m".format(analysis.trend.length)),
+              ("High potential", analysis.n_high),
+              ("Proposed pits", analysis.n_targets)]) }}
+  <div class="card">
+    <ul>{% for line in analysis.summary %}<li>{{ line|safe }}</li>{% endfor %}</ul>
+    <p class="hint">Screening only: the ratings compare pits with each other using the data in your
+      file. They are not a resource estimate. Confirm with sampling before spending on a new pit.</p>
+  </div>
+
+  <div class="tabs" data-group="pits" role="tablist">
+    {% for label, name in tabs %}
+      <button type="button" role="tab" data-panel="pit-{{ name }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+  {% for label, name in tabs %}
+    <div class="panel" id="pit-{{ name }}" role="tabpanel" hidden
+         data-lazy="{{ url_for('app.pit_panel', name=name, run=run.id) }}"></div>
+  {% endfor %}
+{% endif %}
+
+<h2 id="register">Saved pit register</h2>
+<div class="card">
+  {% if not register.table %}
+    <p class="muted">Nothing saved yet. Interpret a pit file and press Save in the
+      <strong>Pit register</strong> tab.</p>
+  {% else %}
+    <form method="get" class="figbar">
+      <label for="projects" style="margin:0">Projects</label>
+      <select id="projects" name="projects" multiple size="{{ [register.projects|length, 4]|min }}"
+              style="width:auto;min-width:220px" onchange="this.form.submit()">
+        {% for p in register.projects %}
+          <option value="{{ p }}" {{ "selected" if p in register.chosen }}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <div class="tablewrap">{{ register.table }}</div>
+    <div class="figbar">
+      {% if run %}
+        {{ dlbar([("Register (CSV)", url_for('app.download', section_key='pit-mapping',
+                                             run_id=run.id, kind='csv', name='register'))]) }}
+      {% endif %}
+      <form method="post" action="{{ url_for('app.pit_mapping') }}"
+            onsubmit="return confirm('Remove that project from the register?')">
+        <input type="hidden" name="do" value="drop-project">
+        <select name="project" style="width:auto">
+          {% for p in register.projects %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+        </select>
+        <button class="btn sec sm" type="submit">Remove a project</button>
+      </form>
+    </div>
+  {% endif %}
+  <p class="hint">The register keeps pit coordinates between sessions, under your account. Saving a
+    project again updates its pits.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

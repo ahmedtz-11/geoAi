@@ -1,7 +1,8 @@
 """Signing up, signing in, and the account page."""
 import re
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import (Blueprint, current_app, flash, redirect, render_template, request, session,
+                   url_for)
 from flask_login import current_user, login_required, login_user, logout_user
 
 from .models import User, audit, db, now, record
@@ -88,6 +89,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.clear()            # drop everything, not only the login keys, and issue a new cookie
     flash("Signed out.", "ok")
     return redirect(url_for("public.index"))
 

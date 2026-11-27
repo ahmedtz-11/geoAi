@@ -41,6 +41,18 @@ SECTIONS = [
 ]
 BY_KEY = {s["key"]: s for s in SECTIONS}
 
+# Sections that are built but held back for the next version. They keep their routes, templates and
+# tests, so nothing here is deleted — they are simply absent from every menu, and the route refuses
+# to open even for an administrator or for a plan that still names them.
+# To release one, take its key out of this set and uncomment the lines marked "next version:
+# pit mapping" in portal/models.py, portal/templates/index.html and the plan seeding.
+NEXT_VERSION = {"pit-mapping"}
+
+
+def visible_sections():
+    """The sections a menu may show, in order."""
+    return [s for s in SECTIONS if s["key"] not in NEXT_VERSION]
+
 
 # ------------------------------------------------------------------ access
 def section(key):
@@ -49,6 +61,10 @@ def section(key):
         @functools.wraps(view)
         @login_required
         def guarded(*a, **kw):
+            if key in NEXT_VERSION:
+                # held back for the next version: unreachable by URL as well as by menu, whatever
+                # the plan says and whoever is signed in
+                abort(404)
             if key not in current_user.allowed_sections():
                 flash(f"{BY_KEY[key]['title']} is not part of your plan.", "error")
                 return redirect(url_for("billing.pricing"))
@@ -89,7 +105,8 @@ def nav_context():
         return {"app_sections": [], "locked_count": 0, "allowance": (0, None, None)}
     allowed = set(current_user.allowed_sections())
     have = set(store.sections_with_results(current_user.id))
-    items = [{**s, "open": s["key"] in allowed, "has_result": s["key"] in have} for s in SECTIONS]
+    items = [{**s, "open": s["key"] in allowed, "has_result": s["key"] in have}
+             for s in visible_sections()]
     return {"app_sections": items, "locked_count": sum(0 if i["open"] else 1 for i in items),
             "allowance": upload_allowance()}
 

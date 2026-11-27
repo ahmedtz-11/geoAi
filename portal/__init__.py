@@ -62,6 +62,19 @@ def create_app(config=None):
                 "accept_attr": ACCEPT_ATTR,
                 "accept_text": "CSV, text, Geosoft XYZ (.dat), Excel, GeoTIFF, or a picture of a map."}
 
+    @app.after_request
+    def do_not_cache_pages(response):
+        """Signing out has to mean the pages are gone, and the browser's Back button serves whatever
+        it has in its history cache unless it is told not to keep one. Pictures and the vendored
+        Plotly set their own caching and are left alone; every page is no-store, which is also what
+        keeps one person's results out of a shared browser after they sign out."""
+        if response.mimetype == "text/html":
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"          # for HTTP/1.0 proxies
+            response.headers["Expires"] = "0"
+            response.headers["Vary"] = "Cookie"
+        return response
+
     @app.errorhandler(403)
     def forbidden(_):
         return render_template("error.html", code=403, message="You do not have access to that page."), 403

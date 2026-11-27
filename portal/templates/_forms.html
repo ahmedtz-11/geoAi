@@ -1,0 +1,19 @@
+{# Form controls shared by the public and signed-in pages. #}
+
+{% macro password(id, name, label, autocomplete="current-password", autofocus=false, hint=none) %}
+  {#
+    A password field with a show/hide button. The button is a real <button type="button">, so it
+    never submits the form, and it carries aria-pressed so a screen reader announces the state
+    rather than the icon. The field starts hidden; the delegated listener in base.html does the toggling.
+  #}
+  <label for="{{ id }}">{{ label }}</label>
+  <div class="pw">
+    <input id="{{ id }}" name="{{ name }}" type="password" required
+           autocomplete="{{ autocomplete }}"{% if autofocus %} autofocus{% endif %}>
+    <button type="button" class="pw-eye" aria-controls="{{ id }}" aria-pressed="false"
+            title="Show password" aria-label="Show password">
+      {{ icon('eye', 'shown') }}{{ icon('eye-off', 'hidden') }}
+    </button>
+  </div>
+  {% if hint %}<p class="hint">{{ hint }}</p>{% endif %}
+{% endmacro %}

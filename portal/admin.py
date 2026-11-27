@@ -7,7 +7,8 @@ from flask_login import current_user, login_required
 from sqlalchemy import func, or_
 
 from .billing import PROVIDERS, activate
-from .models import (SECTIONS, AuditLog, Payment, Plan, Subscription, UsageEvent, User, audit, db, now)
+from .models import (AuditLog, Payment, Plan, Subscription, UsageEvent, User, audit, db, now,
+                     released_sections)
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -162,7 +163,7 @@ def plans():
         except ValueError:
             flash("Price, period, seats and the upload cap must be numbers.", "error")
             return redirect(url_for("admin.plans"))
-        p.sections = ",".join(s for s in request.form.getlist("sections") if s in SECTIONS)
+        p.sections = ",".join(s for s in request.form.getlist("sections") if s in released_sections())
         p.can_download = bool(request.form.get("can_download"))
         p.is_public = bool(request.form.get("is_public"))
         audit(current_user.email, "plan_saved", code, f"{p.price:,.0f} {p.currency}, {p.sections}")
@@ -170,7 +171,7 @@ def plans():
         flash(f"Plan “{p.name}” saved.", "ok")
         return redirect(url_for("admin.plans"))
     return render_template("admin/plans.html", plans=Plan.query.order_by(Plan.sort).all(),
-                           sections=SECTIONS)
+                           sections=released_sections())
 
 
 @bp.route("/payments")

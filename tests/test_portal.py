@@ -216,8 +216,10 @@ def test_an_admin_sees_everything_whatever_their_plan(app):
         u.set_password("a-long-password-9")
         db.session.add(u)
         db.session.commit()
-        from portal.models import SECTIONS
-        assert u.allowed_sections() == list(SECTIONS) and u.may_download()
+        from portal.models import released_sections
+        # everything that is released: a section held back for the next version is nobody's,
+        # not even an administrator's
+        assert u.allowed_sections() == list(released_sections()) and u.may_download()
 
 
 # ---------------------------------------------------------------- the admin dashboard
@@ -474,3 +476,85 @@ def test_an_unhandled_error_is_written_to_the_data_folder(app, client):
 
 def test_a_missing_page_is_still_a_plain_404(client):
     assert client.get("/no-such-page").status_code == 404
+
+
+# ---------------------------------------------------------------- sections held back
+def test_a_held_back_section_is_in_no_menu_and_has_no_working_url(app, client):
+    """Pit mapping is built but kept for the next version. Its code, routes and templates stay, so
+    nothing here checks that it is gone — only that no browser can reach it."""
+    from portal.models import NEXT_VERSION
+
+    assert NEXT_VERSION, "this test is about held-back sections; the set is empty"
+    key = sorted(NEXT_VERSION)[0]
+
+    # the public home page and the plans do not mention it
+    for url in ["/", "/pricing"]:
+        body = client.get(url).get_data(as_text=True)
+        assert "Pit mapping" not in body, f"{url} still offers pit mapping"
+
+    # neither does any signed-in page, for an administrator who may open everything else
+    email, pw = make_admin(app)
+    client.post("/login", data={"email": email, "password": pw})
+    for url in ["/app/", "/account"]:
+        body = client.get(url).get_data(as_text=True)
+        assert "Pit mapping" not in body and f"/app/{key}" not in body, f"{url} still links to it"
+
+    # and the route itself is closed, however the plan is written
+    assert client.get(f"/app/{key}").status_code == 404
+
+
+def test_an_admin_cannot_grant_a_held_back_section_to_a_plan(app, client):
+    from portal.models import NEXT_VERSION, Plan
+
+    key = sorted(NEXT_VERSION)[0]
+    email, pw = make_admin(app)
+    client.post("/login", data={"email": email, "password": pw})
+    with app.app_context():
+        plan_id = Plan.query.filter_by(code="basic").first().id
+    client.post(f"/admin/plans/{plan_id}", data={"name": "Basic", "price": "120000",
+                "period_days": "30", "max_uploads_per_month": "50", "seats": "1",
+                "sections": ["magnetic", key]}, follow_redirects=True)
+    with app.app_context():
+        assert key not in Plan.query.filter_by(code="basic").first().section_list
+
+
+# ---------------------------------------------------------------- signing out
+def test_pages_are_never_stored_by_the_browser(client):
+    """Without this the Back button shows a signed-out person the pages they were just on."""
+    for url in ["/", "/login"]:
+        cc = client.get(url).headers.get("Cache-Control", "")
+        assert "no-store" in cc, f"{url} may be kept in the browser's history cache"
+
+
+def test_signing_out_empties_the_session(client):
+    signup(client)
+    assert client.get("/account").status_code == 200
+    with client.session_transaction() as sess:
+        sess["something_we_left_behind"] = "x"
+    client.get("/logout")
+    with client.session_transaction() as sess:
+        assert "something_we_left_behind" not in sess
+        assert not [k for k in sess if not k.startswith("_flashes")]
+    r = client.get("/account")
+    assert r.status_code == 302 and "/login" in r.headers["Location"]
+
+
+# ---------------------------------------------------------------- password fields
+def test_every_password_field_has_a_show_hide_button(client):
+    """The macro is the only way a password field is written, so a new form cannot forget it."""
+    import re
+
+    signup(client)
+    for url in ["/account"]:
+        body = client.get(url).get_data(as_text=True)
+        fields = re.findall(r'<input id="([^"]+)" name="[^"]*" type="password"', body)
+        assert fields, f"no password field found on {url}"
+        for fid in fields:
+            assert f'aria-controls="{fid}"' in body, f"{fid} on {url} has no show/hide button"
+    client.get("/logout")
+    for url in ["/login", "/register"]:
+        body = client.get(url).get_data(as_text=True)
+        fields = re.findall(r'<input id="([^"]+)" name="[^"]*" type="password"', body)
+        assert fields, f"no password field found on {url}"
+        for fid in fields:
+            assert f'aria-controls="{fid}"' in body, f"{fid} on {url} has no show/hide button"

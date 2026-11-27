@@ -29,6 +29,23 @@ SECTIONS = {
 }
 FREE_SECTIONS = ["home", "remote-sensing"]
 
+# Built, but held back for the next version. Nothing is deleted: these sections keep their routes,
+# templates and tests, and a plan may still name one in the database. They are simply filtered out
+# of every menu, plan feature list and permission check, so no link to one can reach a browser.
+# To release a section, take its key out of this set and uncomment the lines marked
+# "next version: pit mapping" in portal/templates/index.html and in seed_plans below.
+NEXT_VERSION = {"pit-mapping"}
+
+
+def released(keys):
+    """Only the sections that are live in this version, keeping the order given."""
+    return [k for k in keys if k not in NEXT_VERSION]
+
+
+def released_sections():
+    """The key -> label map a menu or an admin form may offer."""
+    return {k: v for k, v in SECTIONS.items() if k not in NEXT_VERSION}
+
 
 def now():
     return datetime.now(timezone.utc)
@@ -58,7 +75,7 @@ class Plan(db.Model):
 
     @property
     def section_list(self):
-        return [s for s in (self.sections or "").split(",") if s]
+        return released(s for s in (self.sections or "").split(",") if s)
 
     def allows(self, section):
         return section in self.section_list
@@ -139,9 +156,9 @@ class User(UserMixin, db.Model):
     def allowed_sections(self):
         """Which sections this user may open: their plan's, or the free ones when they have no plan."""
         if self.is_admin:
-            return list(SECTIONS)
+            return released(SECTIONS)
         p = self.plan
-        return p.section_list if p else list(FREE_SECTIONS)
+        return p.section_list if p else released(FREE_SECTIONS)
 
     def may_download(self):
         p = self.plan
@@ -253,7 +270,8 @@ DEFAULT_PLANS = [
          max_uploads_per_month=5, sections=",".join(FREE_SECTIONS)),
     dict(code="basic", name="Basic", price=120000, period_days=30, sort=1, can_download=True,
          max_uploads_per_month=50,
-         sections="home,remote-sensing,magnetic,ip,pit-mapping"),
+         # next version: pit mapping — append ",pit-mapping" here when it is released
+         sections="home,remote-sensing,magnetic,ip"),
     dict(code="pro", name="Professional", price=300000, period_days=30, sort=2, can_download=True,
          max_uploads_per_month=0, seats=3, sections=",".join(SECTIONS)),
 ]

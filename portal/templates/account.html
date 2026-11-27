@@ -1,4 +1,5 @@
 {% extends "console.html" %}
+{% from "_forms.html" import password with context %}
 {% block title %}My account · {{ BRAND }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
 {% block rail %}{% include "_rail_workbench.html" %}{% endblock %}
@@ -35,10 +36,10 @@
     </form>
     <h2>Change password</h2>
     <form method="post" action="{{ url_for('auth.change_password') }}">
-      <label for="c">Current password</label><input id="c" name="current" type="password" required>
+      {{ password("c", "current", "Current password") }}
       <div class="grid g2" style="gap:.2rem 1rem">
-        <div><label for="np">New password</label><input id="np" name="password" type="password" required></div>
-        <div><label for="np2">Repeat</label><input id="np2" name="password2" type="password" required></div>
+        <div>{{ password("np", "password", "New password", autocomplete="new-password") }}</div>
+        <div>{{ password("np2", "password2", "Repeat", autocomplete="new-password") }}</div>
       </div>
       <p><button class="btn sec" type="submit">Change password</button></p>
     </form>

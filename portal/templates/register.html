@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Create an account · {{ BRAND }}{% endblock %}
+{% from "_forms.html" import password with context %}
 {% block body %}
 <div class="authbox" style="max-width:520px">
 <h1>Create an account</h1>
@@ -16,10 +17,8 @@
   <label for="phone">Phone (for payment confirmation)</label>
   <input id="phone" name="phone" value="{{ form.get('phone','') }}" autocomplete="tel">
   <div class="grid g2" style="gap:.2rem 1rem">
-    <div><label for="password">Password</label>
-      <input id="password" name="password" type="password" required autocomplete="new-password"></div>
-    <div><label for="password2">Repeat password</label>
-      <input id="password2" name="password2" type="password" required autocomplete="new-password"></div>
+    <div>{{ password("password", "password", "Password", autocomplete="new-password") }}</div>
+    <div>{{ password("password2", "password2", "Repeat password", autocomplete="new-password") }}</div>
   </div>
   <p class="small muted">At least 10 characters, with letters and something that is not a letter.</p>
   <p><button class="btn" type="submit">Create account</button></p>

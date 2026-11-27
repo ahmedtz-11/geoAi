@@ -46,5 +46,33 @@
   {% block body %}{% endblock %}
 </div>
 {% endblock %}
+<script>
+/* Show/hide for every password field on the page, including ones added later. One delegated
+   listener, so the markup only has to carry the button. */
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest(".pw-eye");
+  if (!btn) return;
+  var field = document.getElementById(btn.getAttribute("aria-controls"));
+  if (!field) return;
+  var show = field.type === "password";
+  field.type = show ? "text" : "password";
+  btn.setAttribute("aria-pressed", String(show));
+  var what = show ? "Hide password" : "Show password";
+  btn.setAttribute("aria-label", what);
+  btn.title = what;
+  /* keep the caret where it was, instead of jumping to the start */
+  var at = field.value.length;
+  field.focus();
+  try { field.setSelectionRange(at, at); } catch (err) { /* some types refuse a range */ }
+});
+/* never leave a password on screen after the form goes */
+window.addEventListener("pagehide", function () {
+  document.querySelectorAll(".pw input[type=text]").forEach(function (f) {
+    f.type = "password";
+    var b = f.parentNode.querySelector(".pw-eye");
+    if (b) b.setAttribute("aria-pressed", "false");
+  });
+});
+</script>
 {% block scripts %}{% endblock %}
 </body></html>

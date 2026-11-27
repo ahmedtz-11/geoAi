@@ -27,7 +27,7 @@
     <p><b>{{ u.plan_name }}</b>
       {% if s %}<span class="tag ok">active</span> until {{ s.ends_at.strftime('%d %b %Y') }}
         ({{ s.days_left }} days){% else %}<span class="tag no">no paid plan</span>{% endif %}</p>
-    <p class="small">Sections: {% for k in u.allowed_sections() %}<span class="tag ok">{{ k.replace('-',' ') }}</span> {% endfor %}</p>
+    <p class="small">Sections: {% for k in u.allowed_sections() %}<span class="tag ok">{{ section_name(k) }}</span> {% endfor %}</p>
     <p class="small">Downloads: {{ 'yes' if u.may_download() else 'no' }} ·
        Uploads this month: {{ used }}{% if limit %} of {{ limit }}{% endif %}</p>
     <p class="small muted">Joined {{ u.created_at.strftime('%d %b %Y') }} ·

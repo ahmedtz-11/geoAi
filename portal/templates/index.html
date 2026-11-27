@@ -19,9 +19,17 @@
 {% block page %}
 <section class="band">
   <div class="wrap">
-    <h2 style="margin-top:0">Seven tools, one workspace</h2>
+    {# next version: pit mapping — this heading says "Seven tools" again when it is released #}
+    <h2 style="margin-top:0">Six tools, one workspace</h2>
     <p class="lede">Use whichever sections you have data for. The last one combines them.</p>
     <div class="secrow">
+      {#
+        next version: pit mapping — to release it, put this entry back into the list below,
+        between Geochemistry and Integrated prediction, and make the heading "Seven tools" again:
+
+            ('pickaxe', 'Pit mapping',
+             'Pit coordinates give the mineralisation trend, what each pit still holds, and where to dig next.'),
+      #}
       {% for ic, name, what in [
         ('satellite', 'Remote sensing',
          'Four corner coordinates give you satellite imagery, alteration indices, lineaments, DEM and 3-D terrain.'),
@@ -33,8 +41,6 @@
          'Strike and dip readings become structural sets, a stereonet, and the plunge an ore shoot follows.'),
         ('flask', 'Geochemistry',
          'Soil assays become thresholds that fit your ground, anomaly zones, and an interpolated surface.'),
-        ('pickaxe', 'Pit mapping',
-         'Pit coordinates give the mineralisation trend, what each pit still holds, and where to dig next.'),
         ('target', 'Integrated prediction',
          'Everything above, combined into one prospectivity map with ranked targets and estimated depths.')] %}
         <div>

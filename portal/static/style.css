@@ -212,6 +212,20 @@ table.data td:not(:first-child){font-family:var(--mono);font-size:.85rem}
 .checks{columns:2;column-gap:2rem;font-size:.93rem;margin:0;padding-left:1.1rem}
 
 /* ---------------------------------------------------------------- auth pages */
+/* password field with a show/hide button ---------------------------------- */
+.pw{position:relative;display:block}
+.pw input{padding-right:2.9rem !important;width:100%}
+.pw-eye{position:absolute;right:1px;top:1px;bottom:1px;width:2.7rem;display:flex;
+  align-items:center;justify-content:center;background:none;border:0;border-left:1px solid var(--g200);
+  color:var(--g500);cursor:pointer;padding:0}
+.pw-eye:hover{color:var(--ink);background:var(--g50)}
+.pw-eye:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.pw-eye .ico{width:17px;height:17px}
+/* one icon at a time: the eye offers to show it, the struck-through eye to hide it again */
+.pw-eye .hidden{display:none}
+.pw-eye[aria-pressed=true] .shown{display:none}
+.pw-eye[aria-pressed=true] .hidden{display:block}
+
 .authbox{max-width:420px;margin:3rem auto}
 .authbox .card{padding:1.6rem}
 .authbox h1{font-size:1.5rem}

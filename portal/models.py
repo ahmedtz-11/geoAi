@@ -66,7 +66,7 @@ class Plan(db.Model):
     @property
     def price_label(self):
         if self.price <= 0:
-            return "Free"
+            return "No charge"
         per = {30: "month", 31: "month", 90: "quarter", 365: "year"}.get(self.period_days,
                                                                          f"{self.period_days} days")
         return f"{self.currency} {self.price:,.0f} / {per}"

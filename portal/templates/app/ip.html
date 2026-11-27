@@ -111,7 +111,7 @@ on the same axes so they can be compared directly.</p>
     {% endif %}
     <div class="actions">
       <button class="btn" type="submit" {{ "disabled" if running or not summary or not summary.ready }}>
-        🚀 Submit &amp; interpret</button>
+        {{ icon('play') }} Submit &amp; interpret</button>
       <span class="hint">Inverting a line takes a few seconds each.</span>
     </div>
   </section>
@@ -119,8 +119,8 @@ on the same axes so they can be compared directly.</p>
 </form>
 
 {% if not items and not run %}
-  <div class="card empty">
-    <div class="big">⚡</div>
+  <div class="empty">
+    {{ icon('zap') }}
     <p>Upload one file per survey line to begin. There are samples in
       <code>sample_data/ip_line_*.csv</code> and <code>sample_data/ip_res2dinv_L1.dat</code>.</p>
   </div>
@@ -129,7 +129,7 @@ on the same axes so they can be compared directly.</p>
 {% if run %}
   <h2 id="results">Inverse model sections</h2>
   <div class="runbar">
-    <span>✅ {{ run.meta().get("files", [])|length }} file(s)</span>
+    <span>{{ icon('check-circle') }} {{ run.meta().get("files", [])|length }} file(s)</span>
     <span class="muted">{{ run.meta().get("seconds", 0) }}s</span>
     <span class="sp">
       <form method="post" action="{{ url_for('app.delete_run', section_key='ip', run_id=run.id) }}"
@@ -141,5 +141,3 @@ on the same axes so they can be compared directly.</p>
   <div id="ip-sections" data-lazy="{{ url_for('app.ip_sections', run=run.id) }}"></div>
 {% endif %}
 {% endblock %}
-
-{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

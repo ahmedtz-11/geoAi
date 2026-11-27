@@ -30,7 +30,7 @@ SOURCES = [("remote-sensing", "1 · Remote sensing", "app.remote_sensing"),
            ("geochemistry", "5 · Geochemistry", "app.geochemistry")]
 METHODS = ["Knowledge-driven (expert weights)", "Data-driven (Random Forest on gold samples)",
            "Average of both"]
-TABS = [("Summary", "summary"), ("⭐ Gold prediction", "gold"), ("Remote sensing layers", "remote")]
+TABS = [("Summary", "summary"), ("Gold prediction", "gold"), ("Remote sensing layers", "remote")]
 
 
 def attach(bp):

@@ -1,8 +1,7 @@
-{% extends "base.html" %}
-{% block title %}Admin · {{ BRAND }}{% endblock %}
-{% block wide %}wide{% endblock %}
-{% block body %}
-<h1>Admin</h1>{% include "admin/_nav.html" %}
+{% set page_title = "Overview" %}
+{% extends "admin/layout.html" %}
+{% block main %}
+<h1>Admin</h1>
 <div class="grid g4">
   <div class="stat"><div class="n">{{ stats.users }}</div><div class="l">Accounts</div></div>
   <div class="stat"><div class="n">{{ stats.active }}</div><div class="l">Paying now</div></div>

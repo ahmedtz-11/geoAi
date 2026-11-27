@@ -5,14 +5,16 @@
   action="{{ url_for('app.remote_panel', name='ratios', run=run.id, **aoi_q) }}">
   <input type="hidden" name="_t" value="1">
   <div class="fieldgrid">
-    <div class="field w-half"><label for="preset">Ratio colour composite</label>
+    <div class="field w-half">
+      <label for="preset">Ratio colour composite</label>
       <select id="preset" name="preset">
         {% for p in presets %}<option value="{{ p }}" {{ "selected" if p==preset }}>{{ p }}</option>{% endfor %}
       </select>
     </div>
     {% if preset == "Custom" %}
     {% for ch, lbl in [("r", "Red"), ("g", "Green"), ("b", "Blue")] %}
-    <div class="field w-quarter"><label for="ch-{{ ch }}">{{ lbl }}</label>
+    <div class="field w-quarter">
+      <label for="ch-{{ ch }}">{{ lbl }}</label>
       <select id="ch-{{ ch }}" name="{{ ch }}">
         {% for k in keys %}<option value="{{ k }}" {{ "selected" if k==rgb_map[ch] }}>{{ k }}</option>{% endfor %}
       </select>
@@ -21,9 +23,12 @@
     {% endif %}
   </div>
 </form>
+
 <div class="figrow">
   <div>
-    <div class="fig imgwrap"><img src="{{ fig_url('ratio-rgb', **q) }}" alt="Ratio composite" loading="lazy"></div>
+    <div class="fig imgwrap">
+      <img src="{{ fig_url('ratio-rgb', **q) }}" alt="Ratio composite" loading="lazy">
+    </div>
     {{ dlbar([("Composite PNG", dl("png", "ratio-rgb", **q)),
     ("Composite GeoTIFF", dl("tif", "ratio-rgb", **q))]) }}
   </div>
@@ -38,7 +43,11 @@
     </ul>
   </div>
 </div>
-<h4>All band ratio images <span class="muted small">(cloud and no-data masked)</span></h4>
-<div class="fig imgwrap"><img src="{{ fig_url('ratio-all') }}" alt="All band ratios" loading="lazy"></div>
+<h4>
+  All band ratio images <span class="muted small">(cloud and no-data masked)</span>
+</h4>
+<div class="fig imgwrap">
+  <img src="{{ fig_url('ratio-all') }}" alt="All band ratios" loading="lazy">
+</div>
 {{ dlbar([("All ratios (PNG)", dl("png", "ratio-all")),
 ("All ratios (GeoTIFF, one band each)", dl("tif", "ratio-all"))]) }}

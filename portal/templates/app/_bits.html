@@ -11,7 +11,7 @@
   {% if current_user.may_download() %}
     <div class="figbar">
       {% for label, href in links %}
-        {% if href %}<a class="btn sec sm" href="{{ href }}">⬇ {{ label }}</a>{% endif %}
+        {% if href %}<a class="btn sec sm" href="{{ href }}">{{ label }}</a>{% endif %}
       {% endfor %}
     </div>
   {% else %}
@@ -20,9 +20,9 @@
 {% endmacro %}
 
 {% macro metrics(items) %}
-  <div class="grid g4" style="margin:.4rem 0 1rem">
+  <div class="metrics">
     {% for label, value in items %}
-      <div class="stat"><div class="n">{{ value }}</div><div class="l">{{ label }}</div></div>
+      <div><div class="n">{{ value }}</div><div class="l">{{ label }}</div></div>
     {% endfor %}
   </div>
 {% endmacro %}

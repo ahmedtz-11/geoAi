@@ -1,8 +1,7 @@
-{% extends "base.html" %}
-{% block title %}Payments · {{ BRAND }}{% endblock %}
-{% block wide %}wide{% endblock %}
-{% block body %}
-<h1>Payments</h1>{% include "admin/_nav.html" %}
+{% set page_title = "Payments" %}
+{% extends "admin/layout.html" %}
+{% block main %}
+<h1>Payments</h1>
 <div class="card"><p class="small muted">Total received: <b>{{ '{:,.0f}'.format(total) }}</b></p>
 <table><tr><th>Date</th><th>User</th><th>Plan</th><th>Amount</th><th>Method</th><th>Reference</th><th>Status</th></tr>
 {% for p in rows %}<tr><td class="small">{{ p.at.strftime('%d %b %Y %H:%M') }}</td>

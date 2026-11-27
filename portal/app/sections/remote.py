@@ -36,7 +36,7 @@ TABS = [("High-resolution image", "image"), ("Iron oxide/ferric iron", "iron"),
         ("Clay/hydroxyl alteration", "clay"), ("Band ratios", "ratios"), ("PCA images", "pca"),
         ("Lithological classification", "lithology"), ("Geological lineaments", "lineaments"),
         ("DEM / hillshade", "dem"), ("3-D terrain", "terrain3d"),
-        ("⭐ Integrated prospectivity", "prospectivity")]
+        ("Integrated prospectivity", "prospectivity")]
 
 DRAPES = {
     "Shaded relief": ("picture", None),

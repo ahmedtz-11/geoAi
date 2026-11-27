@@ -78,7 +78,7 @@ upward continuation, SPI and Euler depths, and a magnetic target map.</p>
   <section class="step card">
     <h2><span class="n">4</span> Submit</h2>
     <div class="actions">
-      <button class="btn" type="submit" {{ "disabled" if running }}>🚀 Submit &amp; interpret</button>
+      <button class="btn" type="submit" {{ "disabled" if running }}>{{ icon('play') }} Submit &amp; interpret</button>
       <span class="hint">This takes a minute or two. You can leave the page while it runs.</span>
     </div>
   </section>
@@ -86,8 +86,8 @@ upward continuation, SPI and Euler depths, and a magnetic target map.</p>
 </form>
 
 {% if not items and not run %}
-  <div class="card empty">
-    <div class="big">🧲</div>
+  <div class="empty">
+    {{ icon('magnet') }}
     <p>Upload a magnetic survey to begin. There is a sample in <code>sample_data/magnetics_tmi.dat</code>.</p>
   </div>
 {% endif %}
@@ -97,7 +97,6 @@ upward continuation, SPI and Euler depths, and a magnetic target map.</p>
 {% endif %}
 {% endblock %}
 
-{% block scripts %}
+{% block console_scripts %}{{ super() }}
 <script src="{{ url_for('app.plotly_js') }}"></script>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
 {% endblock %}

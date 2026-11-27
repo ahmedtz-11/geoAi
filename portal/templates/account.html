@@ -1,8 +1,10 @@
-{% extends "base.html" %}
+{% extends "console.html" %}
 {% block title %}My account · {{ BRAND }}{% endblock %}
-{% block body %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+{% block rail %}{% include "_rail_workbench.html" %}{% endblock %}
+{% block main %}
 <h1>My account</h1>
-<div class="grid g2">
+<div class="grid g2" style="align-items:start">
   <div class="card">
     <h2 style="margin-top:0">Subscription</h2>
     {% set s = current_user.subscription %}
@@ -15,7 +17,7 @@
       <p class="small muted">You are on the free plan. Subscribe to open the other sections and download results.</p>
     {% endif %}
     <p class="small">Sections you can open:<br>
-      {% for s2 in current_user.allowed_sections() %}<span class="tag ok">{{ s2.replace('-',' ') }}</span> {% endfor %}</p>
+      {% for s2 in current_user.allowed_sections() if s2 != 'home' %}<span class="tag ok">{{ section_name(s2) }}</span> {% endfor %}</p>
     <p class="small">Downloads: {% if current_user.may_download() %}<span class="tag ok">included</span>
       {% else %}<span class="tag no">not included</span>{% endif %}
       &nbsp; Uploads this month: <b>{{ used }}</b>{% if limit %} of {{ limit }}{% else %} (no limit){% endif %}</p>

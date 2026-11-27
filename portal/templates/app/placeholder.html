@@ -3,9 +3,8 @@
 {% block main %}
 <h1>{{ section.title }}</h1>
 <p class="lede">{{ section.blurb }}</p>
-<div class="card empty">
-  <div class="big">{{ section.icon }}</div>
+<div class="empty">
+  {{ icon(section.icon) }}
   <p>This section is being moved over from the old interface. It will be here shortly.</p>
 </div>
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

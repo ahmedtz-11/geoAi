@@ -1,6 +1,8 @@
-{% extends "base.html" %}
-{% block title %}Pricing · {{ BRAND }}{% endblock %}
-{% block body %}
+{% extends "console.html" if current_user.is_authenticated else "base.html" %}
+{% block title %}Plans · {{ BRAND }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">{% endblock %}
+{% block rail %}{% include "_rail_workbench.html" %}{% endblock %}
+{% block main %}{% block body %}
 <h1>Plans</h1>
 {% if provider == 'manual' %}
 <p class="muted">Choose a plan and we will confirm your payment, then your access opens.</p>
@@ -8,21 +10,27 @@
 <div class="grid g3">
   {% for p in plans %}
   <div class="plan {% if p.code == 'pro' %}featured{% endif %}">
-    <div class="small muted">{{ p.name }}</div>
+    <h3>{{ p.name }}</h3>
     <div class="price">{{ p.price_label }}</div>
     <ul>
-      {% for s in p.section_list %}<li>{{ s.replace('-', ' ')|title }}</li>{% endfor %}
-      <li>{{ 'Downloads included' if p.can_download else 'View on screen only' }}</li>
-      <li>{{ p.max_uploads_per_month ~ ' uploads a month' if p.max_uploads_per_month else 'Unlimited uploads' }}</li>
-      {% if p.seats > 1 %}<li>{{ p.seats }} users</li>{% endif %}
+      {% for s in p.section_list if s != 'home' %}<li>{{ icon('check') }} {{ section_name(s) }}</li>{% endfor %}
+      <li class="{{ '' if p.can_download else 'off' }}">{{ icon('check' if p.can_download else 'close') }}
+        {{ 'Downloads included' if p.can_download else 'View on screen only' }}</li>
+      <li>{{ icon('check') }}
+        {{ p.max_uploads_per_month ~ ' runs a month' if p.max_uploads_per_month else 'Unlimited runs' }}</li>
+      {% if p.seats > 1 %}<li>{{ icon('check') }} {{ p.seats }} users</li>{% endif %}
     </ul>
     {% if current_user.is_authenticated %}
-      {% if p.price > 0 %}<a class="btn" href="{{ url_for('billing.subscribe', code=p.code) }}">Choose {{ p.name }}</a>
+      {% if p.price > 0 %}
+        <a class="btn {{ 'primary' if p.code == 'pro' else 'sec' }} block"
+           href="{{ url_for('billing.subscribe', code=p.code) }}">Choose {{ p.name }}</a>
       {% else %}<span class="tag no">Included with every account</span>{% endif %}
     {% else %}
-      <a class="btn" href="{{ url_for('auth.register') }}">Create an account</a>
+      <a class="btn {{ 'primary' if p.code == 'pro' else 'sec' }} block"
+         href="{{ url_for('auth.register') }}">Create an account</a>
     {% endif %}
   </div>
   {% endfor %}
 </div>
+{% endblock %}
 {% endblock %}

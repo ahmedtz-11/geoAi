@@ -1,37 +1,75 @@
 {% extends "base.html" %}
+
 {% block hero %}
-<div class="hero"><div class="wrap">
-  <h1>Find gold in your own field data</h1>
-  <p>{{ BRAND }} turns the surveys you already run — soil geochemistry, ground magnetics, IP lines,
-     structural measurements and satellite imagery — into interpreted maps, ranked targets and depth
-     estimates, using the same methods as Oasis montaj and Res2DInv.</p>
-  <a class="btn" href="{{ url_for('auth.register') }}">Create a free account</a>
-  <a class="btn sec" href="{{ url_for('billing.pricing') }}">See the plans</a>
-</div></div>
-{% endblock %}
-{% block body %}
-<h2>What it does</h2>
-<div class="card"><ul class="checks">
-  <li><b>Remote sensing</b> — alteration indices, lineaments, 3-D terrain</li>
-  <li><b>Magnetic</b> — RTP/RTE, derivatives, SPI and Euler depths, target map</li>
-  <li><b>IP</b> — inverse model chargeability and resistivity sections</li>
-  <li><b>Geology</b> — structural sets, ore-shoot plunge, stereonet</li>
-  <li><b>Geochemistry</b> — where background stops, anomaly zones, kriging</li>
-  <li><b>Integrated prediction</b> — all of it combined into ranked targets</li>
-</ul></div>
-<h2>Plans</h2>
-<div class="grid g3">
-  {% for p in plans %}
-  <div class="plan {% if p.code == 'pro' %}featured{% endif %}">
-    <div class="small muted">{{ p.name }}</div>
-    <div class="price">{{ p.price_label }}</div>
-    <ul>
-      {% for s in p.section_list %}<li>{{ sections.get(s, s) }}</li>{% endfor %}
-      <li>{{ 'Downloads included' if p.can_download else 'View on screen only' }}</li>
-      <li>{{ p.max_uploads_per_month ~ ' uploads a month' if p.max_uploads_per_month else 'Unlimited uploads' }}</li>
-    </ul>
-    <a class="btn" href="{{ url_for('auth.register') }}">Get started</a>
+<section class="hero">
+  <div class="wrap">
+    <h1>Find gold in the data you already have</h1>
+    <p>{{ BRAND }} turns the surveys you already run — soil geochemistry, ground magnetics, IP lines,
+      structural measurements and satellite imagery — into interpreted maps, ranked targets and depth
+      estimates, using the methods behind Oasis montaj and Res2DInv.</p>
+    <div class="hero-acts">
+      <a class="btn primary lg" href="{{ url_for('auth.register') }}">Create a free account</a>
+      <a class="btn sec lg" href="{{ url_for('billing.pricing') }}">See the plans</a>
+    </div>
   </div>
-  {% endfor %}
-</div>
+  <p class="hero-cap">Reduced-to-pole magnetics with traced lineaments, drawn by {{ BRAND }}</p>
+</section>
+{% endblock %}
+
+{% block page %}
+<section class="band">
+  <div class="wrap">
+    <h2 style="margin-top:0">Seven tools, one workspace</h2>
+    <p class="lede">Use whichever sections you have data for. The last one combines them.</p>
+    <div class="secrow">
+      {% for ic, name, what in [
+        ('satellite', 'Remote sensing',
+         'Four corner coordinates give you satellite imagery, alteration indices, lineaments, DEM and 3-D terrain.'),
+        ('magnet', 'Magnetic',
+         'One survey file becomes TMI, RTP/RTE, derivatives, analytic signal, tilt, SPI and Euler depths.'),
+        ('zap', 'IP',
+         'One file per line gives inverse model chargeability and resistivity sections in Res2DInv style.'),
+        ('rock', 'Geology',
+         'Strike and dip readings become structural sets, a stereonet, and the plunge an ore shoot follows.'),
+        ('flask', 'Geochemistry',
+         'Soil assays become thresholds that fit your ground, anomaly zones, and an interpolated surface.'),
+        ('pickaxe', 'Pit mapping',
+         'Pit coordinates give the mineralisation trend, what each pit still holds, and where to dig next.'),
+        ('target', 'Integrated prediction',
+         'Everything above, combined into one prospectivity map with ranked targets and estimated depths.')] %}
+        <div>
+          <h3>{{ icon(ic) }} {{ name }}</h3>
+          <p>{{ what }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="band alt">
+  <div class="wrap">
+    <h2 style="margin-top:0">Plans</h2>
+    <div class="grid g3">
+      {% for p in plans %}
+        <div class="plan {% if p.code == 'pro' %}featured{% endif %}">
+          <h3>{{ p.name }}</h3>
+          <div class="price">{{ p.price_label }}</div>
+          <ul>
+            {% for s in p.section_list if s != 'home' %}
+              <li>{{ icon('check') }} {{ section_name(s) }}</li>
+            {% endfor %}
+            <li class="{{ '' if p.can_download else 'off' }}">
+              {{ icon('check' if p.can_download else 'close') }}
+              {{ 'Downloads included' if p.can_download else 'View on screen only' }}</li>
+            <li>{{ icon('check') }}
+              {{ p.max_uploads_per_month ~ ' runs a month' if p.max_uploads_per_month else 'Unlimited runs' }}</li>
+            {% if p.seats > 1 %}<li>{{ icon('check') }} {{ p.seats }} users</li>{% endif %}
+          </ul>
+          <a class="btn {{ 'primary' if p.code == 'pro' else 'sec' }} block"
+             href="{{ url_for('auth.register') }}">Get started</a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
 {% endblock %}

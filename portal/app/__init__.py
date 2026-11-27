@@ -16,26 +16,26 @@ bp = Blueprint("app", __name__, url_prefix="/app")
 
 # key must match portal.models.SECTIONS, which is what the plans are written in terms of
 SECTIONS = [
-    {"key": "remote-sensing", "title": "1 · Remote sensing", "icon": "🛰️", "endpoint": "app.remote_sensing",
+    {"key": "remote-sensing", "title": "1 · Remote sensing", "icon": "satellite", "endpoint": "app.remote_sensing",
      "blurb": "The four corner coordinates of your area give you satellite imagery, alteration indices, "
               "band ratios, PCA, lithological classification, lineaments, DEM and 3D terrain, and a "
               "prospectivity map."},
-    {"key": "magnetic", "title": "2 · Magnetic", "icon": "🧲", "endpoint": "app.magnetic",
+    {"key": "magnetic", "title": "2 · Magnetic", "icon": "magnet", "endpoint": "app.magnetic",
      "blurb": "One magnetic survey file becomes TMI, RTP/RTE, vertical derivatives, analytic signal, "
               "tilt, THDR, lineaments, upward continuation, SPI and Euler depths, and a target map."},
-    {"key": "ip", "title": "3 · IP", "icon": "⚡", "endpoint": "app.ip",
+    {"key": "ip", "title": "3 · IP", "icon": "zap", "endpoint": "app.ip",
      "blurb": "One file per survey line gives inverse model chargeability and resistivity sections in "
               "Res2DInv style, with anomaly positions and depths."},
-    {"key": "geology", "title": "4 · Geology", "icon": "🪨", "endpoint": "app.geology",
+    {"key": "geology", "title": "4 · Geology", "icon": "rock", "endpoint": "app.geology",
      "blurb": "Mapping points with lithology, strike and dip, and/or a QDS sheet: lithology map, "
               "favourable host rocks, strike rose, stereonet and structural sets."},
-    {"key": "geochemistry", "title": "5 · Geochemistry", "icon": "⚗️", "endpoint": "app.geochemistry",
+    {"key": "geochemistry", "title": "5 · Geochemistry", "icon": "flask", "endpoint": "app.geochemistry",
      "blurb": "Soil samples with gold assays: anomaly thresholds, populations, interpolated surfaces "
               "and the zones worth following up."},
-    {"key": "prediction", "title": "6 · Integrated gold prediction", "icon": "⭐", "endpoint": "app.prediction",
+    {"key": "prediction", "title": "6 · Integrated gold prediction", "icon": "target", "endpoint": "app.prediction",
      "blurb": "Everything you have submitted in the other sections, combined into one prospectivity "
               "map with ranked targets, estimated depth and trend, and a report."},
-    {"key": "pit-mapping", "title": "Pit mapping", "icon": "⛏️", "endpoint": "app.pit_mapping",
+    {"key": "pit-mapping", "title": "Pit mapping", "icon": "pickaxe", "endpoint": "app.pit_mapping",
      "blurb": "Pit coordinates, a picture and field notes: the mineralisation trend, what each pit "
               "still has, proposed neighbour pits, and a register kept for next time."},
 ]
@@ -83,8 +83,7 @@ def upload_allowance():
     return used, limit, None if limit is None else max(limit - used, 0)
 
 
-@bp.context_processor
-def _nav():
+def nav_context():
     """What the sidebar needs, on every page of the workbench."""
     if not current_user.is_authenticated:
         return {"app_sections": [], "locked_count": 0, "allowance": (0, None, None)}
@@ -212,13 +211,15 @@ def register(app):
     """
     global _attached
     from . import sections
-    from .render import fmt, stats_row, table_html
+    from .render import fmt, md, stats_row, table_html
     if not _attached:
         sections.attach(bp)
         _attached = True
     app.register_blueprint(bp)
     app.config.setdefault("KEEP_RUNS", store.KEEP_RUNS)
+    app.context_processor(nav_context)        # the rail is shown on every signed-in page
     app.jinja_env.filters["grid_stats"] = stats_row
     app.jinja_env.filters["num"] = fmt
+    app.jinja_env.filters["md"] = md
     app.jinja_env.filters["table"] = table_html
     return bp

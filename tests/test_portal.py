@@ -4,6 +4,7 @@ The gate tests matter most. Everything else here is a convenience that can be fi
 gate means anyone on the internet uses the app for nothing.
 """
 import os
+import pathlib
 import sys
 from datetime import timedelta
 
@@ -387,3 +388,89 @@ def test_an_admin_is_never_capped(app, client):
         with app.app_context():
             login_user(User.query.filter_by(email=email).first())
             assert upload_allowance() == (0, None, None)
+
+
+# ---------------------------------------------------------------- the icon set
+def test_every_icon_the_templates_ask_for_exists_in_the_sprite():
+    """icon() raises on an unknown name, but only when that branch of a template runs. Check the
+    whole set up front so a typo in a rarely-seen panel cannot reach anybody."""
+    import re
+
+    from portal import icons
+
+    have = set(icons.names())
+    root = pathlib.Path(__file__).resolve().parents[1]
+    pattern = re.compile(r"""icon\(\s*['"]([a-z0-9-]+)['"]""")
+    asked = {}
+    for path in list((root / "portal" / "templates").rglob("*.html")) + \
+            list((root / "portal").rglob("*.py")):
+        for name in pattern.findall(path.read_text(encoding="utf-8")):
+            asked.setdefault(name, path.relative_to(root))
+    assert asked, "no icon() calls found — has the sprite been wired up?"
+    missing = {n: str(p) for n, p in asked.items() if n not in have}
+    assert not missing, f"icons used but not in the sprite: {missing}"
+
+
+def test_the_section_icons_are_icon_names_not_emojis():
+    from portal import icons
+    from portal.app import SECTIONS
+
+    have = set(icons.names())
+    for s in SECTIONS:
+        assert s["icon"] in have, f"{s['key']} has icon {s['icon']!r}, which is not in the sprite"
+
+
+def test_no_emojis_are_left_in_the_templates():
+    """The icon sprite replaced every emoji. Typographic marks are fine; pictographs are not."""
+    allowed = set("\u2014\u2013\u00b7\u2026\u2018\u2019\u201c\u201d\u00d7\u00b0"
+                  "\u2032\u2033\u2265\u2264\u2192\u221e\u2318\u00a0")
+    root = pathlib.Path(__file__).resolve().parents[1] / "portal" / "templates"
+    bad = []
+    for path in root.rglob("*.html"):
+        for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            if any(ord(ch) > 0x2000 and ch not in allowed for ch in line):
+                bad.append(f"{path.name}:{n}")
+    assert not bad, f"emoji or other pictographs left in: {bad}"
+
+
+# ---------------------------------------------------------------- failure handling
+def test_a_run_whose_result_cannot_be_read_is_cleared_instead_of_crashing(client, app):
+    """A finished run with no readable run.pkl — a restored folder, a disk that filled mid-save,
+    an upgrade past an old pickle — must not take the section down with it."""
+    import json
+
+    from portal.app import store
+
+    signup(client)
+    client.get("/logout")
+    email, pw = make_admin(app)                      # an administrator may open every section
+    client.post("/login", data={"email": email, "password": pw})
+    with app.app_context():
+        uid = User.query.filter_by(email=email).first().id
+        run = store.Run.create(uid, "magnetic")
+        (run.dir / "meta.json").write_text(json.dumps(
+            {"id": run.id, "section": "magnetic", "state": "done", "label": "x"}), encoding="utf-8")
+        gone = run.dir
+    r = client.get("/app/magnetic", follow_redirects=True)
+    assert r.status_code == 200
+    assert "could not be read back" in r.get_data(as_text=True)
+    assert not gone.exists(), "the unreadable run should have been cleared"
+
+
+def test_an_unhandled_error_is_written_to_the_data_folder(app, client):
+    """Whoever runs this needs the traceback, and a browser saying "Internal Server Error" has none."""
+    import pathlib
+
+    @app.route("/_boom_for_test")
+    def boom():
+        raise RuntimeError("deliberate")
+
+    assert client.get("/_boom_for_test").status_code == 500
+    log = pathlib.Path(app.config["DATA_DIR"]) / "last-error.log"
+    assert log.is_file()
+    text = log.read_text(encoding="utf-8")
+    assert "RuntimeError: deliberate" in text and "/_boom_for_test" in text
+
+
+def test_a_missing_page_is_still_a_plain_404(client):
+    assert client.get("/no-such-page").status_code == 404

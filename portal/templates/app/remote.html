@@ -31,7 +31,7 @@ imagery and highlights the surface alteration linked to gold.</p>
           Y/X or northing/easting. Degrees-minutes-seconds like 2°51'00"S also work.</p>
       </div>
     </form>
-    {% if have_file %}<p class="chosen">📄 <strong>{{ filename }}</strong></p>{% endif %}
+    {% if have_file %}<p class="chosen">{{ icon('file') }} <strong>{{ filename }}</strong></p>{% endif %}
   </div>
   <div class="panel" id="rs-type" role="tabpanel" hidden>
     <form method="post" action="{{ url_for('app.remote_sensing') }}">
@@ -103,7 +103,7 @@ imagery and highlights the surface alteration linked to gold.</p>
       <input type="hidden" name="do" value="load"><input type="hidden" name="auto" value="1">
       {{ hidden_aoi }}
       <div class="actions">
-        <button class="btn" type="submit" {{ "disabled" if running }}>🛰️ Get the latest scene</button>
+        <button class="btn" type="submit" {{ "disabled" if running }}>{{ icon('satellite') }} Get the latest scene</button>
         <span class="hint">Searches the last six months for a clear scene. Takes a minute or two.</span>
       </div>
     </form>
@@ -124,7 +124,7 @@ imagery and highlights the surface alteration linked to gold.</p>
             <input type="range" id="cloud" name="cloud" value="{{ search.cloud }}" min="0" max="100">
           </div>
         </div>
-        <div class="actions"><button class="btn sec" type="submit">🔎 Search scenes</button></div>
+        <div class="actions"><button class="btn sec" type="submit">{{ icon('search') }} Search scenes</button></div>
       </form>
 
       {% if groups %}
@@ -155,7 +155,7 @@ imagery and highlights the surface alteration linked to gold.</p>
               stay fast.</p>
           </div></div>
           <div class="actions">
-            <button class="btn" type="submit" {{ "disabled" if running }}>⬇️ Load this scene</button>
+            <button class="btn" type="submit" {{ "disabled" if running }}>{{ icon('download') }} Load this scene</button>
           </div>
         </form>
       {% endif %}
@@ -167,7 +167,7 @@ imagery and highlights the surface alteration linked to gold.</p>
 {% if aoi and run %}
   <h2 id="results">Satellite image outputs</h2>
   <div class="runbar">
-    <span>✅ {{ scene.data.date if scene else "area only" }}</span>
+    <span>{{ icon('check-circle') }} {{ scene.data.date if scene else "area only" }}</span>
     <span class="sp">
       <form method="post" action="{{ url_for('app.delete_run', section_key='remote-sensing', run_id=run.id) }}"
             onsubmit="return confirm('Clear this scene and its results?')">
@@ -185,12 +185,11 @@ imagery and highlights the surface alteration linked to gold.</p>
          data-lazy="{{ url_for('app.remote_panel', name=name, run=run.id, **aoi_q) }}"></div>
   {% endfor %}
 {% elif aoi %}
-  <div class="card empty"><div class="big">🛰️</div>
+  <div class="empty">{{ icon('satellite') }}
     <p>Load a satellite scene to see the image outputs.</p></div>
 {% endif %}
 {% endblock %}
 
-{% block scripts %}
+{% block console_scripts %}{{ super() }}
 <script src="{{ url_for('app.plotly_js') }}"></script>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
 {% endblock %}

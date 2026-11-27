@@ -62,20 +62,20 @@ in a register for future use.</p>
           <input type="range" id="outs" name="outs" value="{{ outs }}" min="0" max="4"></div>
       </div>
       <div class="actions">
-        <button class="btn" type="submit" {{ "disabled" if running }}>🚀 Submit &amp; interpret</button>
+        <button class="btn" type="submit" {{ "disabled" if running }}>{{ icon('play') }} Submit &amp; interpret</button>
       </div>
     </section>
   {% endif %}
 </form>
 
 {% if not items and not run %}
-  <div class="card empty"><div class="big">⛏️</div><p>Upload your pit coordinates to begin.</p></div>
+  <div class="empty">{{ icon('pickaxe') }}<p>Upload your pit coordinates to begin.</p></div>
 {% endif %}
 
 {% if run and analysis %}
   <h2 id="results">Interpretation</h2>
   <div class="runbar">
-    <span>✅ {{ analysis.project }}</span>
+    <span>{{ icon('check-circle') }} {{ analysis.project }}</span>
     <span class="sp">
       <form method="post" action="{{ url_for('app.delete_run', section_key='pit-mapping', run_id=run.id) }}"
             onsubmit="return confirm('Clear these results?')">
@@ -88,7 +88,7 @@ in a register for future use.</p>
               ("High potential", analysis.n_high),
               ("Proposed pits", analysis.n_targets)]) }}
   <div class="card">
-    <ul>{% for line in analysis.summary %}<li>{{ line|safe }}</li>{% endfor %}</ul>
+    <ul>{% for line in analysis.summary %}<li>{{ line|md }}</li>{% endfor %}</ul>
     <p class="hint">Screening only: the ratings compare pits with each other using the data in your
       file. They are not a resource estimate. Confirm with sampling before spending on a new pit.</p>
   </div>
@@ -139,5 +139,3 @@ in a register for future use.</p>
     project again updates its pits.</p>
 </div>
 {% endblock %}
-
-{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

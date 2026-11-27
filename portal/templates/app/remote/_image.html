@@ -1,22 +1,32 @@
 {% from "app/_bits.html" import dlbar with context %}
-<p class="hint">Best available high-resolution mosaic (sub-metre to a few metres). The capture date
-varies by location.</p>
+<p class="hint">
+  Best available high-resolution mosaic (sub-metre to a few metres). The capture date
+  varies by location.
+</p>
+
 <form class="figbar" data-panel-form="rs-image"
-      action="{{ url_for('app.remote_panel', name='image', run=run.id, **aoi_q) }}">
+  action="{{ url_for('app.remote_panel', name='image', run=run.id, **aoi_q) }}">
   <label for="img-detail" style="margin:0">Detail</label>
   <select id="img-detail" name="detail" style="width:auto">
-    {% for d in details %}<option value="{{ d }}" {{ "selected" if d == detail }}>{{ d }}</option>{% endfor %}
+    {% for d in details %}<option value="{{ d }}" {{ "selected" if d==detail }}>{{ d }}</option>{% endfor %}
   </select>
 </form>
+
 {% if error %}
-  <p class="note err">Could not download the satellite image: {{ error }}</p>
+<p class="note err">
+  Could not download the satellite image: {{ error }}
+</p>
+
 {% else %}
-  {% if failed %}<p class="note warn">{{ failed }} tile(s) could not be downloaded and show as grey.</p>{% endif %}
-  <div class="fig imgwrap">
-    <img src="{{ fig_url('basemap', detail=detail) }}"
-         alt="Satellite image" loading="lazy"></div>
-  {{ dlbar([("Map with labels (PNG)", dl("png", "basemap", detail=detail)),
-            ("Image only (PNG)", dl("img", "satellite-image", detail=detail)),
-            ("GeoTIFF (for QGIS/ArcGIS)", dl("tif", "satellite-image", detail=detail))]) }}
-  <p class="hint">Zoom level {{ zoom }} · {{ size[0] }}×{{ size[1] }} px · {{ attribution }}</p>
+{% if failed %}
+<p class="note warn">
+  {{ failed }} tile(s) could not be downloaded and show as grey.
+</p>{% endif %}
+<div class="fig imgwrap">
+  <img src="{{ fig_url('basemap', detail=detail) }}" alt="Satellite image" loading="lazy">
+</div>
+{{ dlbar([("Map with labels (PNG)", dl("png", "basemap", detail=detail)),
+("Image only (PNG)", dl("img", "satellite-image", detail=detail)),
+("GeoTIFF (for QGIS/ArcGIS)", dl("tif", "satellite-image", detail=detail))]) }}
+<p class="hint">Zoom level {{ zoom }} · {{ size[0] }}×{{ size[1] }} px · {{ attribution }}</p>
 {% endif %}

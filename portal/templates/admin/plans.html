@@ -1,8 +1,7 @@
-{% extends "base.html" %}
-{% block title %}Plans · {{ BRAND }}{% endblock %}
-{% block wide %}wide{% endblock %}
-{% block body %}
-<h1>Plans</h1>{% include "admin/_nav.html" %}
+{% set page_title = "Plans" %}
+{% extends "admin/layout.html" %}
+{% block main %}
+<h1>Plans</h1>
 <p class="small muted">A plan is just data: change what it includes here and every subscriber on it is
   affected at once, with no change to the app.</p>
 <div class="card"><table>

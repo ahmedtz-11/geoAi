@@ -25,7 +25,7 @@
 
   {% for it in items %}
     <div class="chosen" id="files">
-      <span>📄</span>
+      {{ icon('file') }}
       <strong>{{ it.name }}</strong>
       {% if it.info %}
         <span class="muted small">

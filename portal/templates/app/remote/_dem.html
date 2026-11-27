@@ -1,8 +1,10 @@
 {% from "app/_bits.html" import dlbar, metrics with context %}
-<p class="hint">Copernicus DEM GLO-30 elevation. Relief shows ridges of resistant rock (quartz veins,
-BIF, granites), valleys eroded along faults and soft units, and the drainage pattern.</p>
-<form class="card" data-panel-form="rs-dem"
-      action="{{ url_for('app.remote_panel', name='dem', run=run.id, **aoi_q) }}">
+<p class="hint">
+  Copernicus DEM GLO-30 elevation. Relief shows ridges of resistant rock (quartz veins,
+  BIF, granites), valleys eroded along faults and soft units, and the drainage pattern.
+</p>
+
+<form class="card" data-panel-form="rs-dem" action="{{ url_for('app.remote_panel', name='dem', run=run.id, **aoi_q) }}">
   <input type="hidden" name="_t" value="1">
   <div class="fieldgrid">
     <div class="field w-quarter">
@@ -10,36 +12,44 @@ BIF, granites), valleys eroded along faults and soft units, and the drainage pat
       <input type="range" id="dem-az" name="az" value="{{ o.az }}" min="0" max="360" step="15">
       <p class="hint">Features perpendicular to the light stand out most.</p>
     </div>
+
     <div class="field w-quarter">
       <label for="dem-alt">Sun altitude (°) <output class="muted">{{ o.alt }}</output></label>
       <input type="range" id="dem-alt" name="alt" value="{{ o.alt }}" min="5" max="85" step="5">
     </div>
+
     <div class="field w-quarter">
       <label for="dem-z">Vertical exaggeration <output class="muted">{{ o.z }}</output></label>
       <input type="range" id="dem-z" name="z" value="{{ o.z }}" min="1" max="5" step="0.5">
     </div>
+
     <div class="field w-quarter">
-      <div class="inline"><input type="checkbox" id="dem-c" name="contours" value="1"
-                                 {{ "checked" if o.contours }}>
-        <label for="dem-c">Contours</label></div>
+      <div class="inline">
+        <input type="checkbox" id="dem-c" name="contours" value="1" {{ "checked" if o.contours }}>
+        <label for="dem-c">Contours</label>
+      </div>
     </div>
   </div>
 </form>
 
 {{ metrics([("Lowest", "{:,.0f} m".format(low)), ("Highest", "{:,.0f} m".format(high)),
-            ("Relief", "{:,.0f} m".format(relief)), ("Mean slope", "%.1f°"|format(mean_slope))]) }}
+("Relief", "{:,.0f} m".format(relief)), ("Mean slope", "%.1f°"|format(mean_slope))]) }}
 
 <div class="figrow">
   <div>
     <div class="fig imgwrap"><img src="{{ fig_url('dem-relief', **q) }}" alt="Shaded relief" loading="lazy"></div>
     {{ dlbar([("Relief (PNG)", dl("png", "dem-relief", **q)),
-              ("Elevation, hillshade, slope, aspect (GeoTIFF)", dl("tif", "dem", **q))]) }}
+    ("Elevation, hillshade, slope, aspect (GeoTIFF)", dl("tif", "dem", **q))]) }}
   </div>
   <div>
     <div class="fig imgwrap"><img src="{{ fig_url('dem-hillshade', **q) }}" alt="Hillshade" loading="lazy"></div>
     <div class="fig imgwrap" style="margin-top:.6rem">
-      <img src="{{ fig_url('dem-slope', **q) }}" alt="Slope" loading="lazy"></div>
+      <img src="{{ fig_url('dem-slope', **q) }}" alt="Slope" loading="lazy">
+    </div>
   </div>
 </div>
-<p class="hint">{{ attribution }}. 30 m source resampled to the {{ res_m }} m analysis grid. The
-<strong>3-D terrain</strong> tab draws this same landform in 3-D, with any of the maps draped over it.</p>
+
+<p class="hint">
+  {{ attribution }}. 30 m source resampled to the {{ res_m }} m analysis grid. The
+  <strong>3-D terrain</strong> tab draws this same landform in 3-D, with any of the maps draped over it.
+</p>

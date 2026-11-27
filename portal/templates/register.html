@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Create an account · {{ BRAND }}{% endblock %}
 {% block body %}
+<div class="authbox" style="max-width:520px">
 <h1>Create an account</h1>
-<div class="card" style="max-width:520px">
+<div class="card">
 <form method="post">
   <div class="grid g2" style="gap:.2rem 1rem">
     <div><label for="name">Your name</label>
@@ -24,5 +25,6 @@
   <p><button class="btn" type="submit">Create account</button></p>
 </form>
 <p class="small muted">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a>.</p>
+</div>
 </div>
 {% endblock %}

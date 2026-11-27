@@ -6,7 +6,7 @@
 {% else %}
 
 <div class="runbar">
-  <span>✅ {{ run.meta().get("files", ["results"])|join(", ") }}</span>
+  <span>{{ icon('check-circle') }} {{ run.meta().get("files", ["results"])|join(", ") }}</span>
   <span class="muted">{{ run.meta().get("seconds", 0) }}s</span>
   <span class="sp">
     {% if history|length > 1 %}
@@ -33,7 +33,7 @@
     <span class="seg">
       {% for v in views %}
         {% set vv = v|lower %}
-        <a class="btn sec sm" style="border:0;border-radius:0;{{ 'background:var(--gold);color:#fff;font-weight:600' if vv == use }}"
+        <a {% if vv == use %}aria-current="true"{% endif %}
            href="{{ url_for('app.magnetic', view=vv, run=run.id) }}#results">{{ v }}</a>
       {% endfor %}
     </span>

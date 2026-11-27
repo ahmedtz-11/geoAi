@@ -1,12 +1,17 @@
 {% from "app/_bits.html" import dlbar, metrics with context %}
-<p class="hint">Lineaments are straight to gently curved linear features — valleys, ridges, tonal
+<p class="hint">
+  Lineaments are straight to gently curved linear features — valleys, ridges, tonal
 boundaries — that often follow faults, shear zones, fractures, dykes and contacts, which control many
-gold deposits. They are traced automatically from shaded relief and/or the imagery.</p>
+gold deposits. They are traced automatically from shaded relief and/or the imagery.
+</p>
+
 <form class="card" data-panel-form="rs-lineaments"
       action="{{ url_for('app.remote_panel', name='lineaments', run=run.id, **aoi_q) }}">
   <input type="hidden" name="_t" value="1">
+
   <div class="fieldgrid">
-    <div class="field w-third"><label>Trace from</label>
+    <div class="field w-third">
+      <label>Trace from</label>
       {% for src in o.sources %}
         <span class="inline" style="margin:.2rem 0">
           <input type="radio" id="src{{ loop.index }}" name="source" value="{{ src }}"
@@ -14,17 +19,27 @@ gold deposits. They are traced automatically from shaded relief and/or the image
           <label for="src{{ loop.index }}">{{ src }}</label></span>
       {% endfor %}
     </div>
+
     <div class="field w-third">
-      <label for="lin-pct">Selectivity <output class="muted">{{ o.pct }}</output></label>
+      <label for="lin-pct">
+        Selectivity <output class="muted">{{ o.pct }}</output>
+      </label>
       <input type="range" id="lin-pct" name="pct" value="{{ o.pct }}" min="80" max="98">
       <p class="hint">Higher keeps only the sharpest edges: fewer, more reliable.</p>
-      <label for="lin-sigma">Smoothing <output class="muted">{{ o.sigma }}</output></label>
+      <label for="lin-sigma">
+        Smoothing <output class="muted">{{ o.sigma }}</output>
+      </label>
       <input type="range" id="lin-sigma" name="sigma" value="{{ o.sigma }}" min="1" max="4" step="0.5">
     </div>
+
     <div class="field w-third">
-      <label for="lin-len">Minimum length (m) <output class="muted">{{ o.length }}</output></label>
+      <label for="lin-len">
+        Minimum length (m) <output class="muted">{{ o.length }}</output>
+      </label>
       <input type="range" id="lin-len" name="length" value="{{ o.length }}" min="100" max="3000" step="50">
-      <label for="lin-gap">Largest gap to bridge (m) <output class="muted">{{ o.gap }}</output></label>
+      <label for="lin-gap">
+        Largest gap to bridge (m) <output class="muted">{{ o.gap }}</output>
+      </label>
       <input type="range" id="lin-gap" name="gap" value="{{ o.gap }}" min="10" max="500" step="10">
     </div>
   </div>
@@ -38,13 +53,17 @@ gold deposits. They are traced automatically from shaded relief and/or the image
 {% else %}
   <div class="figrow">
     <div>
-      <div class="fig imgwrap"><img src="{{ fig_url('lin-map', **q) }}" alt="Lineament map" loading="lazy"></div>
+      <div class="fig imgwrap">
+        <img src="{{ fig_url('lin-map', **q) }}" alt="Lineament map" loading="lazy">
+      </div>
       {{ dlbar([("Map (PNG)", dl("png", "lin-map", **q)),
                 ("Lineaments (GeoJSON)", dl("geojson", "lineaments", **q)),
                 ("Lineament list (CSV)", dl("csv", "lineaments", **q))]) }}
     </div>
     <div>
-      <div class="fig imgwrap"><img src="{{ fig_url('lin-rose', **q) }}" alt="Strike rose" loading="lazy"></div>
+      <div class="fig imgwrap">
+        <img src="{{ fig_url('lin-rose', **q) }}" alt="Strike rose" loading="lazy">
+      </div>
       <div class="tablewrap">{{ trends }}</div>
     </div>
   </div>
@@ -56,18 +75,25 @@ gold deposits. They are traced automatically from shaded relief and/or the image
       <input type="hidden" name="{{ k }}" value="{{ o[k] }}">
     {% endfor %}
     <label for="lin-radius" style="margin:0">Density search radius (m)
-      <output class="muted">{{ o.radius }}</output></label>
+      <output class="muted">{{ o.radius }}</output>
+    </label>
     <input type="range" id="lin-radius" name="radius" value="{{ o.radius }}" min="100" max="3000"
            step="50" style="width:210px">
   </form>
+
   <div class="figrow">
     <div>
-      <div class="fig imgwrap"><img src="{{ fig_url('lin-density', **q) }}" alt="Lineament density" loading="lazy"></div>
+      <div class="fig imgwrap">
+        <img src="{{ fig_url('lin-density', **q) }}" alt="Lineament density" loading="lazy">
+      </div>
       {{ dlbar([("Density (PNG)", dl("png", "lin-density", **q)),
                 ("Density (GeoTIFF)", dl("tif", "lineament-density", **q))]) }}
     </div>
+
     <div class="fignote">
-      <p><strong>Reading the results</strong></p>
+      <p>
+        <strong>Reading the results</strong>
+      </p>
       <ul>
         <li>The <strong>rose diagram</strong> shows the dominant structural directions. In the Lake
           Victoria goldfields, gold often follows shear zones parallel to the greenstone belt.</li>

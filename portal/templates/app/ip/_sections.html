@@ -41,7 +41,7 @@
              alt="{{ img.kind }} section for line {{ b.line }}" loading="lazy">
       </div>
       <div class="figrow" style="align-items:center;margin-bottom:1rem">
-        <p class="fignote" style="margin:0">{{ img.text|safe }}</p>
+        <p class="fignote" style="margin:0">{{ img.text|md }}</p>
         {{ dlbar([("PNG", url_for('app.download', section_key='ip', run_id=run.id, kind='png',
                                   name=img.fig))]) }}
       </div>

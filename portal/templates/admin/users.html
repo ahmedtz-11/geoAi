@@ -1,8 +1,7 @@
-{% extends "base.html" %}
-{% block title %}Users · {{ BRAND }}{% endblock %}
-{% block wide %}wide{% endblock %}
-{% block body %}
-<h1>Users</h1>{% include "admin/_nav.html" %}
+{% set page_title = "Users" %}
+{% extends "admin/layout.html" %}
+{% block main %}
+<h1>Users</h1>
 <div class="card">
 <form method="get" style="display:flex;gap:.6rem;align-items:end;flex-wrap:wrap">
   <div style="flex:1;min-width:220px"><label for="q">Search name, email or organisation</label>

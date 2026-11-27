@@ -7,6 +7,7 @@ by a short name, so a template can ask for "tmi" and the download route finds th
 import base64
 import io
 import json
+import re
 import threading
 
 import matplotlib
@@ -14,7 +15,7 @@ matplotlib.use("Agg")                      # no display on a server; must be set
 import matplotlib.pyplot as plt            # noqa: E402
 import numpy as np                         # noqa: E402
 import pandas as pd                        # noqa: E402
-from markupsafe import Markup              # noqa: E402
+from markupsafe import Markup, escape      # noqa: E402
 
 DPI = 130
 MAX_TABLE_ROWS = 400
@@ -23,6 +24,20 @@ MAX_TABLE_ROWS = 400
 # pictures at once, and two threads building figures together corrupt that state — most visibly as
 # a mathtext parser error on a perfectly ordinary axis label. Every figure is built under this lock.
 draw_lock = threading.Lock()
+
+
+_MD_BOLD = re.compile(r"\*\*(.+?)\*\*", re.S)
+_MD_CODE = re.compile(r"`([^`]+)`")
+
+
+def md(text):
+    """The analysis modules write their sentences in light markdown, because that is what the
+    narrative looked like when Streamlit rendered it. Escape the text, then honour **bold** and
+    `code` — nothing else, so a stray asterisk in a column name cannot open a tag."""
+    out = escape("" if text is None else str(text))
+    out = _MD_BOLD.sub(r"<strong>\1</strong>", out)
+    out = _MD_CODE.sub(r"<code>\1</code>", out)
+    return Markup(out)
 
 
 def safe_name(s):

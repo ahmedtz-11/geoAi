@@ -4,16 +4,29 @@ One Flask application serves all of it, so a section of the workbench is an ordi
 @login_required rather than a second server that has to be told who is signed in.
 """
 import os
+import pathlib
+import traceback
+from datetime import datetime, timezone
 
-from flask import Flask, render_template
+from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_login import LoginManager
+from werkzeug.exceptions import HTTPException
 
+from . import icons
+from .app.store import ResultUnreadable
 from .config import DATA, Config, check
 from .models import Plan, User, db, seed_plans
 
 login_manager = LoginManager()
 login_manager.login_view = "auth.login"
 login_manager.login_message = "Please sign in to continue."
+
+
+def section_name(key):
+    """The plain name of a section, without the step number the workbench numbers its pages with:
+    the rail wants "2 · Magnetic", a plan's feature list just wants "Magnetic"."""
+    from .models import SECTIONS
+    return SECTIONS.get(key, str(key).replace("-", " ").capitalize()).split("\u00b7")[-1].strip()
 
 
 def create_app(config=None):
@@ -25,6 +38,7 @@ def create_app(config=None):
 
     db.init_app(app)
     login_manager.init_app(app)
+    icons.init_app(app)
 
     from .admin import bp as admin_bp
     from .auth import bp as auth_bp
@@ -44,6 +58,7 @@ def create_app(config=None):
     def inject():
         from .app.uploads import ACCEPT_ATTR
         return {"BRAND": app.config["BRAND"], "SUPPORT_EMAIL": app.config["SUPPORT_EMAIL"],
+                "section_name": section_name,
                 "accept_attr": ACCEPT_ATTR,
                 "accept_text": "CSV, text, Geosoft XYZ (.dat), Excel, GeoTIFF, or a picture of a map."}
 
@@ -62,6 +77,40 @@ def create_app(config=None):
                                message=f"That file is larger than {mb} MB, which is the most this "
                                        f"server accepts. Split the survey, or ask the administrator "
                                        f"to raise GEOAI_MAX_UPLOAD_MB."), 413
+
+    @app.errorhandler(ResultUnreadable)
+    def result_gone(exc):
+        """A finished run whose result cannot be read back is not an error the person can act on,
+        so clear it and send them to the section's upload step with an explanation."""
+        from .app import BY_KEY
+        try:
+            exc.run.delete()
+        except OSError:
+            pass
+        flash("Those results could not be read back, so they have been cleared. "
+              "Upload the file again to re-run the interpretation.", "error")
+        section = BY_KEY.get(exc.run.section)
+        return redirect(url_for(section["endpoint"]) if section else url_for("app.home"))
+
+    @app.errorhandler(Exception)
+    def crashed(exc):
+        """Anything unhandled. The traceback goes to the log and to data/last-error.log, because a
+        browser showing "Internal Server Error" tells whoever is running this nothing at all."""
+        if isinstance(exc, HTTPException):
+            return exc
+        app.logger.exception("unhandled error at %s", request.path)
+        try:
+            log = pathlib.Path(app.config["DATA_DIR"]) / "last-error.log"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            log.write_text(
+                f"{datetime.now(timezone.utc).isoformat(timespec='seconds')}  "
+                f"{request.method} {request.full_path}\n\n{traceback.format_exc()}",
+                encoding="utf-8")
+        except OSError:
+            pass
+        return render_template("error.html", code=500,
+                               message="Something went wrong on the server. The details were "
+                                       "written to data/last-error.log."), 500
 
     with app.app_context():
         db.create_all()

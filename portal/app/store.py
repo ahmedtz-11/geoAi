@@ -32,6 +32,20 @@ KEEP_RUNS = 5                      # per section, per person
 PICKLE_PROTOCOL = 4
 
 
+class ResultUnreadable(Exception):
+    """A run's meta.json says it finished, but run.pkl is missing or cannot be read back.
+
+    This happens when a run folder is copied or restored without its result, when the disk filled
+    part-way through a save, or when the application is upgraded past a pickle written by an older
+    version. The run is gone either way, so the request that hit it clears it and starts over rather
+    than failing with a 500.
+    """
+
+    def __init__(self, run):
+        super().__init__(f"{run.section} run {run.id} has no readable result")
+        self.run = run
+
+
 def root():
     base = Path(current_app.config["DATA_DIR"]) / "work"
     base.mkdir(parents=True, exist_ok=True)
@@ -119,8 +133,13 @@ class Run:
         key = f"_run_{self.user_id}_{self.section}_{self.id}"
         if not hasattr(g, key):
             path = self.dir / "run.pkl"
-            with open(path, "rb") as fh:
-                setattr(g, key, pickle.load(fh))
+            try:
+                with open(path, "rb") as fh:
+                    setattr(g, key, pickle.load(fh))
+            except (OSError, EOFError, AttributeError, ImportError, ModuleNotFoundError,
+                    pickle.UnpicklingError, ValueError) as exc:
+                current_app.logger.warning("unreadable result at %s: %s", path, exc)
+                raise ResultUnreadable(self) from exc
         return getattr(g, key)
 
     def cached(self, key, build):

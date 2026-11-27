@@ -63,21 +63,21 @@ Upload either input, or both.</p>
     <section class="step card">
       <h2><span class="n">{{ (tform and sform) and 4 or 3 }}</span> Submit</h2>
       <div class="actions">
-        <button class="btn" type="submit" {{ "disabled" if running }}>🚀 Submit &amp; interpret</button>
+        <button class="btn" type="submit" {{ "disabled" if running }}>{{ icon('play') }} Submit &amp; interpret</button>
       </div>
     </section>
   {% endif %}
 </form>
 
 {% if not items and not run %}
-  <div class="card empty"><div class="big">🪨</div>
+  <div class="empty">{{ icon('rock') }}
     <p>Upload your measurements, the QDS sheet, or both.</p></div>
 {% endif %}
 
 {% if run and analysis %}
   <h2 id="results">Overview and interpretation</h2>
   <div class="runbar">
-    <span>✅ {{ run.meta().get("files", [])|join(", ") }}</span>
+    <span>{{ icon('check-circle') }} {{ run.meta().get("files", [])|join(", ") }}</span>
     <span class="sp">
       <form method="post" action="{{ url_for('app.delete_run', section_key='geology', run_id=run.id) }}"
             onsubmit="return confirm('Clear these results?')">
@@ -109,7 +109,7 @@ Upload either input, or both.</p>
 
     <div class="card">
       <h3 style="margin-top:0">Interpretation</h3>
-      <ul>{% for line in analysis.narrative %}<li>{{ line|safe }}</li>{% endfor %}</ul>
+      <ul>{% for line in analysis.narrative %}<li>{{ line|md }}</li>{% endfor %}</ul>
       <p class="hint">Structural measurements say where gold could be trapped, not whether it is there.
         Test these directions against the soil anomalies and the geophysics before committing to a
         drill hole.</p>
@@ -127,5 +127,3 @@ Upload either input, or both.</p>
   {% endfor %}
 {% endif %}
 {% endblock %}
-
-{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

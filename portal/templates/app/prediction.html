@@ -36,7 +36,7 @@ gold is most likely, with an estimated depth and structural trend for each targe
 </section>
 
 {% if not chosen %}
-  <div class="card empty"><div class="big">⭐</div>
+  <div class="empty">{{ icon('target') }}
     <p>Submit data in at least one of the sections above, then come back here.</p></div>
 {% elif not combined %}
   <p class="note err">Nothing could be combined from those sections.</p>
@@ -57,5 +57,3 @@ gold is most likely, with an estimated depth and structural trend for each targe
   {% endfor %}
 {% endif %}
 {% endblock %}
-
-{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

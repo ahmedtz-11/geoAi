@@ -1,0 +1,35 @@
+<div class="rail-group">Workbench</div>
+<nav class="rail-nav">
+  <a href="{{ url_for('app.home') }}" class="{{ 'on' if section_key == 'home' }}">
+    {{ icon('home') }}<span class="tx">Overview</span></a>
+</nav>
+
+<div class="rail-group">Sections</div>
+<nav class="rail-nav">
+  {% for s in app_sections %}
+    {% if s.open %}
+      <a href="{{ url_for(s.endpoint) }}" class="{{ 'on' if s.key == section_key }}">
+        {{ icon(s.icon) }}<span class="tx">{{ s.title }}</span>
+        {% if s.has_result %}<span class="dot" title="You have results here"></span>{% endif %}
+      </a>
+    {% else %}
+      <span class="off" title="Comes with a higher plan">
+        {{ icon(s.icon) }}<span class="tx">{{ s.title }}</span>{{ icon('lock', 'sm') }}
+      </span>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+<div class="rail-group">Account</div>
+<nav class="rail-nav">
+  <a href="{{ url_for('auth.account') }}" class="{{ 'on' if request.endpoint == 'auth.account' }}">
+    {{ icon('user') }}<span class="tx">My account</span></a>
+  <a href="{{ url_for('billing.pricing') }}" class="{{ 'on' if request.endpoint == 'billing.pricing' }}">
+    {{ icon('card') }}<span class="tx">Plans</span></a>
+</nav>
+
+{% if locked_count %}
+  <p class="rail-note">{{ locked_count }} more section{{ '' if locked_count == 1 else 's' }}
+    come{{ 's' if locked_count == 1 else '' }} with the higher plans.
+    <a href="{{ url_for('billing.pricing') }}">See plans</a></p>
+{% endif %}

@@ -1,8 +1,7 @@
-{% extends "base.html" %}
-{% block title %}{{ u.email }} · {{ BRAND }}{% endblock %}
-{% block wide %}wide{% endblock %}
-{% block body %}
-<h1>{{ u.email }}</h1>{% include "admin/_nav.html" %}
+{% set page_title = "User" %}
+{% extends "admin/layout.html" %}
+{% block main %}
+<h1>{{ u.email }}</h1>
 <div class="grid g2">
   <div class="card">
     <h2 style="margin-top:0">Give or extend a subscription</h2>

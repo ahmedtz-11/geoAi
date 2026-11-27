@@ -1,0 +1,64 @@
+{# The signed-in console: black top bar, dark rail, white work area.
+   Both the workbench and the admin dashboard extend this, so the two are one product. #}
+{% extends "base.html" %}
+
+{% block burger %}
+<button class="burger" type="button" aria-label="Menu" aria-expanded="false" data-rail-toggle>
+  {{ icon('menu', 'lg') }}
+</button>
+{% endblock %}
+
+{% block body %}{% endblock %}
+
+{% block page %}
+<div class="console">
+  <aside class="rail" id="rail">
+    {% block rail %}{% endblock %}
+
+    <div class="rail-foot">
+      <span class="who">{{ current_user.name or current_user.email }}</span>
+      {% if current_user.is_admin %}
+        <span class="tag ok">Administrator</span>
+      {% else %}
+        <span class="tag {{ 'ok' if current_user.subscription else 'no' }}">{{ current_user.plan.name }}</span>
+        {% if current_user.days_left is not none %}<br>{{ current_user.days_left }} days left{% endif %}
+        {% if allowance is defined and allowance[1] %}
+          <div class="meter"><i style="width:{{ (100 * allowance[0] / allowance[1]) | round | int }}%"></i></div>
+          {{ allowance[2] }} of {{ allowance[1] }} runs left this month
+        {% endif %}
+      {% endif %}
+    </div>
+  </aside>
+  <div class="scrim" data-rail-toggle></div>
+
+  <main class="work">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, m in messages %}
+        <div class="flash {{ cat }}">{{ icon('check-circle' if cat == 'ok' else 'alert') }}
+          <span>{{ m }}</span></div>
+      {% endfor %}
+    {% endwith %}
+    {% block main %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* The rail is a drawer below 980px. */
+(function () {
+  var body = document.body;
+  document.querySelectorAll("[data-rail-toggle]").forEach(function (el) {
+    el.addEventListener("click", function () {
+      var open = body.classList.toggle("rail-open");
+      var b = document.querySelector(".burger");
+      if (b) b.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") body.classList.remove("rail-open");
+  });
+})();
+</script>
+{% block console_scripts %}{% endblock %}
+{% endblock %}

@@ -9,14 +9,14 @@ have data for; the last one combines them. Your results stay here, so you can co
 <div class="secgrid">
   {% for s in app_sections %}
     <div class="seccard {{ '' if s.open else 'locked' }}">
-      <h3><span>{{ s.icon }}</span> {{ s.title }}
+      <h3>{{ icon(s.icon) }} {{ s.title }}
         {% if s.has_result %}<span class="tag ok">has results</span>{% endif %}</h3>
       <p>{{ s.blurb }}</p>
       <div class="go">
         {% if s.open %}
           <a class="btn sm" href="{{ url_for(s.endpoint) }}">{{ "Open" if not s.has_result else "See results" }}</a>
         {% else %}
-          <a class="btn sec sm" href="{{ url_for('billing.pricing') }}">🔒 Comes with a higher plan</a>
+          <a class="btn sec sm" href="{{ url_for('billing.pricing') }}">{{ icon('lock') }} Comes with a higher plan</a>
         {% endif %}
       </div>
     </div>
@@ -33,5 +33,3 @@ have data for; the last one combines them. Your results stay here, so you can co
     shared across runs, because its whole purpose is to build up over time.</p>
 </div>
 {% endblock %}
-
-{% block scripts %}<script src="{{ url_for('static', filename='app.js') }}"></script>{% endblock %}

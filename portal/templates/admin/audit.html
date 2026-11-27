@@ -1,8 +1,7 @@
-{% extends "base.html" %}
-{% block title %}Audit · {{ BRAND }}{% endblock %}
-{% block wide %}wide{% endblock %}
-{% block body %}
-<h1>Audit log</h1>{% include "admin/_nav.html" %}
+{% set page_title = "Audit log" %}
+{% extends "admin/layout.html" %}
+{% block main %}
+<h1>Audit log</h1>
 <p class="small muted">Every change an administrator makes to an account is recorded here.</p>
 <div class="card"><table><tr><th>When</th><th>Who</th><th>Action</th><th>On</th><th>Detail</th></tr>
 {% for a in rows %}<tr><td class="small muted">{{ a.at.strftime('%d %b %Y %H:%M') }}</td>
